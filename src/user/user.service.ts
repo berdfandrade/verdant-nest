@@ -1,4 +1,5 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import mongoose, { ObjectId } from 'mongoose';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './user.schema';
@@ -29,5 +30,12 @@ export class UserService {
 
         const user = new this.userModel(createUserDto)
         return user.save()
+    }
+
+    async getUserById(id : string) : Promise<User | null> {
+        const userId = new mongoose.Types.ObjectId(id)
+        const user = this.userModel.findById(userId)
+        if(!user) throw new NotFoundException("User not exists")
+        return user
     }
 }

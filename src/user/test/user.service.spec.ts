@@ -9,11 +9,12 @@ import { Model } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { CryptService } from '../../security/crypt.service';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { ConflictException } from '@nestjs/common';
 
-let mongoServer : MongoMemoryServer
-let userService : UserService;
-let cryptService : CryptService
-let userModel : Model<User>
+let mongoServer: MongoMemoryServer;
+let userService: UserService;
+let cryptService: CryptService;
+let userModel: Model<User>;
 
 beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
@@ -25,10 +26,7 @@ beforeAll(async () => {
                 { name: User.name, schema: UserSchema },
             ]),
         ],
-        providers: [
-            UserService,
-            CryptService,
-        ],
+        providers: [UserService, CryptService],
         controllers: [UserController],
     }).compile();
 
@@ -59,5 +57,26 @@ describe('🧑 UserService', () => {
             expect(user.username).toBe(mockUser.username);
         });
 
-    })
-})
+        it('should return an error if the email is already registered', async () => {
+            const createUserDto: CreateUserDto = mockUser;
+            await userService.create(createUserDto);
+            expect(userService.create(createUserDto)).rejects.toThrow(
+                ConflictException,
+            );
+        });
+
+        describe('🔑 hashPassword', () => {
+            it('user must have the password hashed', async () => {
+                const createUserDto: CreateUserDto = { ...mockUser };
+                const user = await userService.create(createUserDto);
+
+                await expect(
+                    cryptService.comparePasswords(
+                        mockUser.password,
+                        user.password,
+                    ),
+                ).resolves.toBe(true);
+            });
+        });
+    });
+});
