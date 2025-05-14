@@ -132,6 +132,7 @@ import {
   }
   
   export class CreateUserDto {
+    
     @IsOptional()
     @IsBoolean()
     premium?: boolean;

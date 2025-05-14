@@ -4,6 +4,7 @@ import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../user.service';
 import { UserController } from '../user.controller';
+import { NotFoundException } from '@nestjs/common';
 import { User, UserSchema } from '../user.schema';
 import { Model } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -79,4 +80,79 @@ describe('🧑 UserService', () => {
             });
         });
     });
+
+    describe('🔍 getUserById', () => {
+    it('should return a user by ID', async () => {
+        const createdUser = await userService.create(mockUser);
+        const foundUser = await userService.getUserById(createdUser.id);
+        expect(foundUser).toBeDefined();
+        expect(foundUser.email).toBe(mockUser.email);
+    });
+
+    it('should throw NotFoundException if user does not exist', async () => {
+        const fakeId = new mongoose.Types.ObjectId().toHexString();
+        await expect(userService.getUserById(fakeId)).rejects.toThrow(NotFoundException);
+    });
 });
+
+describe('📜 findAll', () => {
+    it('should return all users', async () => {
+        await userService.create(mockUser);
+        const users = await userService.findAll();
+        expect(users.length).toBe(1);
+        expect(users[0].email).toBe(mockUser.email);
+    });
+
+    it('should return an empty array if no users exist', async () => {
+        const users = await userService.findAll();
+        expect(users).toEqual([]);
+    });
+});
+
+describe('✏️ updateUser', () => {
+    it('should update user data', async () => {
+        const createdUser = await userService.create(mockUser);
+        const updated = await userService.updateUser(createdUser.id, {
+            username: 'UpdatedName',
+        });
+
+        expect(updated).toBeDefined();
+        expect(updated.username).toBe('UpdatedName');
+    });
+
+    it('should hash password if updated', async () => {
+        const createdUser = await userService.create(mockUser);
+        const updated = await userService.updateUser(createdUser.id, {
+            password: 'newPassword123',
+        });
+
+        const isMatch = await cryptService.comparePasswords('newPassword123', updated.password);
+        expect(isMatch).toBe(true);
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+        const fakeId = new mongoose.Types.ObjectId().toHexString();
+        await expect(
+            userService.updateUser(fakeId, { username: 'NotFound' }),
+        ).rejects.toThrow(NotFoundException);
+    });
+});
+
+describe('🗑️ deleteUser', () => {
+    it('should delete a user', async () => {
+        const createdUser = await userService.create(mockUser);
+        await userService.deleteUser(createdUser.id);
+
+        const found = await userModel.findById(createdUser.id);
+        expect(found).toBeNull();
+    });
+
+    it('should throw NotFoundException if user does not exist', async () => {
+        const fakeId = new mongoose.Types.ObjectId().toHexString();
+        await expect(userService.deleteUser(fakeId)).rejects.toThrow(NotFoundException);
+    });
+});
+
+});
+
+
