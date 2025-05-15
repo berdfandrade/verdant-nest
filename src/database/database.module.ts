@@ -1,23 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from "@nestjs/common";
 import { MongooseModule } from '@nestjs/mongoose';
-import { TestDatabaseService } from './test-database.service';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { DatabaseConfig } from "./database.config";
 
-const isTesting = process.env.NODE_ENV === 'test'
-const MongoURI = process.env.MONGO_URI
-
+@Global()
 @Module({
-  imports: [
-    MongooseModule.forRootAsync({
-      useFactory: async () => {
-        const mongoServer = await MongoMemoryServer.create();
-        const uri = isTesting ? mongoServer.getUri() : MongoURI 
-        return { uri };
-      },
-    }),
-  ],
-  providers: [TestDatabaseService],
-  exports: [TestDatabaseService],
+  imports : [MongooseModule.forRoot(DatabaseConfig.DATABASE_URI)],
+  exports: [MongooseModule]
 })
-
 export class DatabaseModule {}

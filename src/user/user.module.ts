@@ -3,7 +3,7 @@ import { Module } from "@nestjs/common";
 import { UserController } from "./user.controller";
 import { UserSchema, User } from "./user.schema";
 import { UserService } from "./user.service";
-import { CryptModule } from "src/security/crypt.module";
+import { CryptModule } from "../security/crypt.module";
 
 @Module({
     imports : [

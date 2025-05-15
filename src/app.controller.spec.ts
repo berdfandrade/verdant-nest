@@ -1,22 +1,35 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { configureViews } from './config/views.config';
+import * as request from 'supertest';
+import { AppModule } from './../src/app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
-describe('AppController', () => {
-  let appController: AppController;
+describe('AppController (e2e)', () => {
+  let app: NestExpressApplication;
 
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
-      providers: [AppService],
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
     }).compile();
 
-    appController = app.get<AppController>(AppController);
+    app = moduleFixture.createNestApplication<NestExpressApplication>(); // 👈 Aqui é o segredo!
+
+    configureViews(app); // 👈 Usa sua função normalmente
+
+    await app.init();
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
-    });
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('/ (GET) should render HTML', () => {
+    return request(app.getHttpServer())
+      .get('/')
+      .expect(200)
+      .expect('Content-Type', /html/)
+      .expect((res) => {
+        expect(res.text).toContain('<!DOCTYPE html'); // ou trecho do seu template
+      });
   });
 });

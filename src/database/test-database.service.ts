@@ -1,30 +1,23 @@
-// src/test-database/test-database.service.ts
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { Mongoose } from 'mongoose';
+import {  Injectable, OnModuleDestroy } from "@nestjs/common";
+import { MongoMemoryServer } from "mongodb-memory-server";
+import mongoose from "mongoose";
 
 @Injectable()
 export class TestDatabaseService implements OnModuleDestroy {
-  private mongoServer: MongoMemoryServer;
-  private mongoose: Mongoose;
+    private mongod : MongoMemoryServer;
 
-  async onModuleInit() {
-    this.mongoServer = await MongoMemoryServer.create();
-    const uri = this.mongoServer.getUri();
-    this.mongoose = new Mongoose();
-    
-    // Conectando-se ao MongoMemoryServer
-    await this.mongoose.connect(uri)
-    console.log('Conectado ao MongoMemoryServer');
-  }
+    async start() : Promise<string> {
+        this.mongod = await MongoMemoryServer.create();
+        return this.mongod.getUri();
+    }
 
-  async onModuleDestroy() {
-    if (this.mongoose) {
-      await this.mongoose.disconnect();
+    async stop() : Promise<void> {
+        await mongoose.connection?.dropDatabase(); 
+        await mongoose.connection?.close();
+        await this.mongod?.stop();
     }
-    if (this.mongoServer) {
-      await this.mongoServer.stop();
+
+    async onModuleDestroy() {
+        await this.stop(); 
     }
-    console.log('Instância do MongoMemoryServer desconectada');
-  }
 }
