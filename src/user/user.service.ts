@@ -2,19 +2,19 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
-import { User } from './user.schema';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { CryptService } from '../security/crypt.service';
+} from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import mongoose, { Model } from "mongoose";
+import { User } from "./user.schema";
+import { CreateUserDto } from "./dto/create-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { CryptService } from "../security/crypt.service";
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
-    private readonly cryptService: CryptService,
+    private readonly cryptService: CryptService
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -23,11 +23,11 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException("Email already registered");
     }
 
     const hashedPassword = await this.cryptService.hashPassword(
-      createUserDto.password,
+      createUserDto.password
     );
 
     createUserDto.password = hashedPassword;
@@ -38,7 +38,7 @@ export class UserService {
 
   async getUserById(id: string): Promise<User> {
     const user = await this.userModel.findById(id);
-    if (!user) throw new NotFoundException('User does not exist');
+    if (!user) throw new NotFoundException("User does not exist");
     return user;
   }
 
@@ -46,26 +46,32 @@ export class UserService {
     return this.userModel.find();
   }
 
+  async findByEmail(email: string): Promise<User> {
+    const user = await this.userModel.findOne({ email: email });
+    if (!user) throw new NotFoundException("Email not registered");
+    return user;
+  }
+
   async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     if (updateUserDto.password) {
       updateUserDto.password = await this.cryptService.hashPassword(
-        updateUserDto.password,
+        updateUserDto.password
       );
     }
 
     const updatedUser = await this.userModel.findByIdAndUpdate(
       id,
       updateUserDto,
-      { new: true },
+      { new: true }
     );
 
-    if (!updatedUser) throw new NotFoundException('User not found');
+    if (!updatedUser) throw new NotFoundException("User not found");
 
     return updatedUser;
   }
 
   async deleteUser(id: string): Promise<void> {
     const result = await this.userModel.findByIdAndDelete(id);
-    if (!result) throw new NotFoundException('User not found');
+    if (!result) throw new NotFoundException("User not found");
   }
 }
