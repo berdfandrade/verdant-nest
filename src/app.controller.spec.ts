@@ -12,9 +12,9 @@ describe('AppController (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication<NestExpressApplication>(); // 👈 Aqui é o segredo!
+    app = moduleFixture.createNestApplication<NestExpressApplication>();
 
-    configureViews(app); // 👈 Usa sua função normalmente
+    configureViews(app); 
 
     await app.init();
   });
@@ -29,7 +29,7 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect('Content-Type', /html/)
       .expect((res) => {
-        expect(res.text).toContain('<!DOCTYPE html'); // ou trecho do seu template
+        expect(res.text).toContain('<!DOCTYPE html');
       });
   });
 });
