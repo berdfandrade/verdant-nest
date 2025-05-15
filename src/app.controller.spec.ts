@@ -13,10 +13,9 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication<NestExpressApplication>();
-
     configureViews(app); 
-
     await app.init();
+    
   });
 
   afterAll(async () => {
