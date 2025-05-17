@@ -1,45 +1,38 @@
-import {
-  IsArray,
-  IsBoolean,
-  IsDate,
-  IsMongoId,
-  IsNotEmpty,
-  IsOptional,
-  ValidateNested,
-} from 'class-validator';
+import mongoose from 'mongoose';
+import { IsArray, IsBoolean, IsDate, IsMongoId, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ObjectId } from 'mongoose';
 
 class CreateMessageDto {
-  @IsMongoId()
-  sender: string;
+	@IsNotEmpty()
+	sender: mongoose.Types.ObjectId;
 
-  @IsNotEmpty()
-  content: string;
+	@IsNotEmpty()
+	content: string;
 
-  @IsOptional()
-  @IsDate()
-  sentAt?: Date;
+	@IsOptional()
+	@IsDate()
+	sentAt?: Date;
 }
 
 export class CreateConversationDto {
-  @IsArray()
-  @IsMongoId({ each: true })
-  participants: string[];
+	@IsArray()
+	participants: mongoose.Types.ObjectId
 
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => CreateMessageDto)
-  messages?: CreateMessageDto[];
+	@IsOptional()
+	@ValidateNested({ each: true })
+	@Type(() => CreateMessageDto)
+	messages?: CreateMessageDto[];
 
-  @IsOptional()
-  @IsDate()
-  startedAt?: Date;
+	@IsOptional()
+	@IsDate()
+	startedAt?: Date;
 
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+	@IsOptional()
+	@IsBoolean()
+	isActive?: boolean;
 
-  @IsOptional()
-  @IsDate()
-  archivedAt?: Date;
+	@IsOptional()
+	@IsDate()
+	archivedAt?: Date;
 }

@@ -38,6 +38,7 @@ beforeAll(async () => {
       },
     ],
   }).compile();
+  
   authService = moduleFixture.get<AuthService>(AuthService);
   userService = moduleFixture.get<UserService>(UserService);
   cryptService = moduleFixture.get<CryptService>(CryptService);

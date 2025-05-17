@@ -1,11 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, HydratedDocument, Types } from 'mongoose';
 import { Message, MessageSchema } from './message.schema';
+import { User } from 'src/user/user.schema';
 
 export type ConversationDocument = HydratedDocument<Conversation>;
 
 @Schema()
 export class Conversation {
+  @Prop()
+  id : string
+  
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], required: true })
   participants: Types.ObjectId[];
 
