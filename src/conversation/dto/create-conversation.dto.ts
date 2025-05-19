@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { Types } from 'mongoose';
 import { IsArray, IsBoolean, IsDate, IsMongoId, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ObjectId } from 'mongoose';
@@ -17,7 +18,7 @@ class CreateMessageDto {
 
 export class CreateConversationDto {
 	@IsArray()
-	participants: mongoose.Types.ObjectId
+	participants: Types.ObjectId[]
 
 	@IsOptional()
 	@ValidateNested({ each: true })

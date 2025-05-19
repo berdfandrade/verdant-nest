@@ -4,6 +4,7 @@ import mongoose, { Model, ObjectId, Types } from 'mongoose';
 import { Message } from './schemas/message.schema';
 import { Conversation, ConversationDocument } from './schemas/conversation.schema';
 import { CreateConversationDto } from './dto/create-conversation.dto';
+import MongoDbUtils from '../utils/MongoDB.utils';
 
 @Injectable()
 export class ConversationService {
@@ -24,8 +25,9 @@ export class ConversationService {
 	}
 
 	// Busca uma convera pelo _id
-	async findById(id: string): Promise<Conversation> {
-		const conversation = await this.conversationModel.findById(id).exec();
+	async findById(id: string | Types.ObjectId): Promise<Conversation> {
+		const objId = typeof id === 'string' ? MongoDbUtils.convertToMongoId(id) : id;
+		const conversation = await this.conversationModel.findById(objId).exec();
 		if (!conversation) throw new NotFoundException('Conversation not found');
 		return conversation;
 	}
@@ -42,7 +44,7 @@ export class ConversationService {
 	}
 
 	// Adiciona uma mensagem a uma conversa (push no array de mensagem)
-	async addMessage(conversationId: string, message: Message): Promise<Conversation> {
+	async addMessage(conversationId: Types.ObjectId, message: Message): Promise<Conversation> {
 		const conversation = await this.conversationModel.findById(conversationId);
 		if (!conversation) throw new NotFoundException('Conversation not found');
 
@@ -55,7 +57,8 @@ export class ConversationService {
 	}
 
 	// Busca mensagens de uma conversa (pode ser paginado)
-	async getMessages(conversationId: string, limit = 50, skip = 0): Promise<Message[]> {
+	async getMessages(conversationId: Types.ObjectId, limit = 50, skip = 0): Promise<Message[]> {
+		
 		const conversation = await this.conversationModel
 			.findById(conversationId)
 			.select('messages')

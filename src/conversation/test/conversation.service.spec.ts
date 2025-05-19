@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import MongoDbUtils from '../../utils/MongoDB.utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { ConversationService } from '../conversation.service';
@@ -50,8 +51,8 @@ describe('💬 ConversationService', () => {
 		it('should create a new conversation with 2 participants', async () => {
 			const dto: CreateConversationDto = {
 				participants: [
-					new Types.ObjectId().toHexString(),
-					new Types.ObjectId().toHexString(),
+					new Types.ObjectId(),
+					new Types.ObjectId(),
 				],
 				messages: [],
 			};
@@ -63,7 +64,7 @@ describe('💬 ConversationService', () => {
 
 		it('should throw if participants are not exactly 2', async () => {
 			const dto: CreateConversationDto = {
-				participants: [new Types.ObjectId().toHexString()],
+				participants: [new Types.ObjectId()],
 				messages: [],
 			};
 
@@ -73,16 +74,19 @@ describe('💬 ConversationService', () => {
 
 	describe('🔍 findById', () => {
 		it('should find a conversation by id', async () => {
+
+			const user1 = new mongoose.Types.ObjectId();
+			const user2 = new mongoose.Types.ObjectId();
+
 			const dto: CreateConversationDto = {
-				participants: [
-					new Types.ObjectId().toHexString(),
-					new Types.ObjectId().toHexString(),
-				],
+				participants: [user1, user2],
 				messages: [],
+				isActive: true,
 			};
 
 			const created = await conversationService.create(dto);
 			const found = await conversationService.findById(created.id);
+			console.log(found)
 			expect(found).toBeDefined();
 			expect(found.id).toBe(created.id);
 		});
@@ -157,9 +161,9 @@ describe('💬 ConversationService', () => {
 				content: 'Hello!',
 				sentAt: new Date(),
 			};
-
+            
 			const updated = await conversationService.addMessage(
-				conversation.id,
+				MongoDbUtils.convertToMongoId(conversation.id),
 				message as any,
 			);
 			expect(updated.messages.length).toBe(1);
@@ -167,9 +171,9 @@ describe('💬 ConversationService', () => {
 		});
 
 		it('should throw if conversation not found', async () => {
-			const fakeId = new Types.ObjectId().toHexString();
+			const fakeId = new Types.ObjectId();
 			const message = {
-				sender: new Types.ObjectId().toHexString(),
+				sender: new Types.ObjectId(),
 				content: 'Hi',
 				sentAt: new Date(),
 			};
@@ -206,14 +210,14 @@ describe('💬 ConversationService', () => {
 			};
 
 			const conversation = await conversationService.create(dto);
-			const result = await conversationService.getMessages(conversation.id);
+			const result = await conversationService.getMessages(new Types.ObjectId(conversation.id));
 
 			expect(result.length).toBe(2);
 			expect(result[0].content).toBe('Hey!');
 		});
 
 		it('should throw if conversation not found', async () => {
-			const fakeId = new Types.ObjectId().toHexString();
+			const fakeId = new Types.ObjectId();
 			await expect(conversationService.getMessages(fakeId)).rejects.toThrow(
 				NotFoundException,
 			);

@@ -61,3 +61,65 @@ export const mockUser: CreateUserDto = {
     },
   },
 };
+
+export const mockUserMaria: CreateUserDto = {
+  premium: false,
+  active: true,
+  verified: false,
+  username: 'maria_artsy',
+  email: 'maria@example.com',
+  password: 'safePassword456',
+  fullName: 'Maria Oliveira',
+  phoneNumber: '+5531988888888',
+  birthDate: new Date('1998-03-22'),
+  location: {
+    type: 'Point',
+    coordinates: [-46.6333, -23.5505], // Exemplo de SP
+  },
+  profession: ['Graphic Designer', 'Illustrator'],
+  showMe: ['men'],
+  description: ['Apaixonada por arte e café', 'Gosto de desenhar no iPad'],
+  photos: [
+    {
+      url: 'https://example.com/maria1.jpg',
+      uploadDate: new Date(),
+    },
+    {
+      url: 'https://example.com/maria2.jpg',
+    },
+  ],
+  about: {
+    height: 165,
+    physicalExercise: 'Sometimes',
+    education: 'Bachelor in Design',
+    drinking: 'Occasionally',
+    smoking: 'No',
+    lookingFor: 'Friendship',
+    children: 'Maybe someday',
+    zodiacSign: 'Aries',
+    politics: 'Center-left',
+    religion: 'Spiritual',
+  },
+  languages: ['Portuguese', 'Spanish', 'English'],
+  conversations: ['661f6d2e9e3c2a1234abc888'],
+  connectedAccounts: ['instagram'],
+  interests: ['Art', 'Photography', 'Travel'],
+  matches: ['661f6d2e9e3c2a1234abc777'],
+  likedProfiles: ['661f6d2e9e3c2a1234abc666'],
+  likedYouProfiles: ['661f6d2e9e3c2a1234abc555'],
+  preferences: {
+    ageRange: [27, 37],
+    distance: '30km',
+    advancedFilters: {
+      verified: false,
+      height: [160, 185],
+      education: ['Bachelor'],
+      alcohol: ['Occasionally'],
+      smoking: ['No'],
+      children: ['Maybe someday'],
+      zodiacSign: ['Aquarius', 'Aries'],
+      politicalView: ['Center-left'],
+      religion: ['Spiritual', 'Agnostic'],
+    },
+  },
+};
