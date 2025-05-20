@@ -15,13 +15,11 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { ConversationService } from '../conversation.service';
 import { AuthModule } from '../../auth/auth.module';
 import { CreateConversationDto } from '../dto/create-conversation.dto';
-import { ConversationController } from '../conversation.controller';
 
 let app: INestApplication;
 let mongoServer: MongoMemoryServer;
 let jwtService: JwtService;
 let conversationService: ConversationService;
-let conversationController: ConversationController;
 let userService: UserService;
 let conversationModel: Model<Conversation>;
 let userModel: Model<User>;
@@ -61,13 +59,12 @@ beforeEach(async () => {
 afterAll(async () => {
 	await mongoose.disconnect();
 	await mongoServer.stop();
-	if (app) {
-		await app.close();
-	}
+	if (app) await app.close();
 });
 
 describe('ConversationController (e2e)', () => {
 	it('should return 200 if the user is in the conversation', async () => {
+
 		const dto: CreateUserDto = mockUser;
 		const user = await userService.create(dto);
 

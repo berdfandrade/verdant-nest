@@ -30,13 +30,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		this.Logger.log(`Client disconnected : ${client.id}`);
 	}
 
-    // Data é aquilo que vem do client... 
 	@SubscribeMessage('send_message')
 	handleMessage(
 		@MessageBody() data: { conversationId: string; message: string, userId : string },
 		@ConnectedSocket() client: Socket,
 	) {	
-		// 
         this.Logger.log(`Mensagem de ${data.userId}`)
 		client.broadcast.emit('receive_message', data);
 		return { status: 'ok', ...data };

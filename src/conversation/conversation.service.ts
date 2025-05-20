@@ -75,4 +75,11 @@ export class ConversationService {
 
 		return messages;
 	}
+
+	// Deleta conversa
+	async deleteConversation( conversationId : Types.ObjectId ){
+		const deleted = await this.conversationModel.findByIdAndDelete(conversationId)
+		if(!deleted) throw new NotFoundException('Conversation not found')
+		return {message : 'Successfully deleted'}
+	}
 }
