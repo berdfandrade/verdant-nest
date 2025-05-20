@@ -17,6 +17,7 @@ class CreateMessageDto {
 }
 
 export class CreateConversationDto {
+	
 	@IsArray()
 	participants: Types.ObjectId[]
 

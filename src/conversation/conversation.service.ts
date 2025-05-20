@@ -26,9 +26,9 @@ export class ConversationService {
 
 	// Busca uma convera pelo _id
 	async findById(id: string | Types.ObjectId): Promise<Conversation> {
-		const objId = typeof id === 'string' ? MongoDbUtils.convertToMongoId(id) : id;
+		const objId = MongoDbUtils.toObjectId(id)
 		const conversation = await this.conversationModel.findById(objId).exec();
-		if (!conversation) throw new NotFoundException('Conversation not found');
+		if (!conversation) throw new NotFoundException(`Conversation not found with ID ${id}`);
 		return conversation;
 	}
 

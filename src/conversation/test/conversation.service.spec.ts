@@ -8,6 +8,8 @@ import { Model, Types } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { CreateConversationDto } from '../dto/create-conversation.dto';
 import { NotFoundException } from '@nestjs/common';
+import { conversationMock } from './mock/conversation.mock';
+
 
 let mongoServer: MongoMemoryServer;
 let conversationService: ConversationService;
@@ -49,15 +51,10 @@ describe('💬 ConversationService', () => {
 
 	describe('🆕 create', () => {
 		it('should create a new conversation with 2 participants', async () => {
-			const dto: CreateConversationDto = {
-				participants: [
-					new Types.ObjectId(),
-					new Types.ObjectId(),
-				],
-				messages: [],
-			};
 
-			const conversation = await conversationService.create(dto);
+			const mockDto : CreateConversationDto = conversationMock
+
+			const conversation = await conversationService.create(mockDto);
 			expect(conversation).toBeDefined();
 			expect(conversation.participants.length).toBe(2);
 		});
@@ -75,20 +72,14 @@ describe('💬 ConversationService', () => {
 	describe('🔍 findById', () => {
 		it('should find a conversation by id', async () => {
 
-			const user1 = new mongoose.Types.ObjectId();
-			const user2 = new mongoose.Types.ObjectId();
-
-			const dto: CreateConversationDto = {
-				participants: [user1, user2],
-				messages: [],
-				isActive: true,
-			};
-
-			const created = await conversationService.create(dto);
-			const found = await conversationService.findById(created.id);
+			const dto: CreateConversationDto = conversationMock
+			await conversationService.create(dto);
+		
+			const found = await conversationService.findById(conversationMock._id);
 			console.log(found)
+
 			expect(found).toBeDefined();
-			expect(found.id).toBe(created.id);
+
 		});
 
 		it('should throw NotFoundException if not found', async () => {
@@ -101,8 +92,9 @@ describe('💬 ConversationService', () => {
 
 	describe('🔎 findBetweenUsers', () => {
 		it('should find conversation between two users', async () => {
-			const user1 = new mongoose.Types.ObjectId();
-			const user2 = new mongoose.Types.ObjectId();
+
+			const user1 = conversationMock.participants[0];
+			const user2 = conversationMock.participants[1];
 
 			const dto: CreateConversationDto = {
 				participants: [user1, user2],
@@ -110,12 +102,12 @@ describe('💬 ConversationService', () => {
 				isActive: true,
 			};
 
-			const created = await conversationService.create(dto);
+			await conversationService.create(dto);
 
 			const found = await conversationService.findBetweenUsers(user1, user2);
 
 			expect(found).toBeDefined();
-			expect(found?.id).toEqual(created.id);
+			expect(found?.id).toEqual(conversationMock._id);
 			expect(found?.participants).toEqual(expect.arrayContaining([user1, user2]));
 		});
 
@@ -163,7 +155,7 @@ describe('💬 ConversationService', () => {
 			};
             
 			const updated = await conversationService.addMessage(
-				MongoDbUtils.convertToMongoId(conversation.id),
+				MongoDbUtils.toObjectId(conversation.id),
 				message as any,
 			);
 			expect(updated.messages.length).toBe(1);

@@ -1,7 +1,9 @@
-import mongoose from 'mongoose';
+
+import { Types } from 'mongoose';
 
 export default class MongoDbUtils {
-	static convertToMongoId(string: string): mongoose.Types.ObjectId {
-		return new mongoose.Types.ObjectId(string);
-	}
+static toObjectId(id: string | Types.ObjectId): Types.ObjectId {
+	return typeof id === 'string' ? new Types.ObjectId(id) : id;
+}
+
 }
