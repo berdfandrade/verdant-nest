@@ -14,7 +14,6 @@ import { UserService } from '../../user/user.service';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { ConversationService } from '../conversation.service';
 import { AuthModule } from '../../auth/auth.module';
-import { conversationMock, mockerConversation } from './mock/conversation.mock';
 import { CreateConversationDto } from '../dto/create-conversation.dto';
 import { ConversationController } from '../conversation.controller';
 
