@@ -7,8 +7,6 @@ export type ConversationDocument = HydratedDocument<Conversation>;
 @Schema()
 export class Conversation extends Document {
 
-  	// _id?: Types.ObjectId;
-
 	@Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], required: true })
 	participants: Types.ObjectId[];
 
