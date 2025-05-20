@@ -1,9 +1,21 @@
 import mongoose from 'mongoose';
-import { Controller, Get, Post, Body, Param, Query, NotFoundException } from '@nestjs/common';
+import {
+	Controller,
+	Get,
+	Post,
+	Body,
+	Param,
+	Query,
+	NotFoundException,
+	Request,
+	ForbiddenException,
+	UseGuards,
+} from '@nestjs/common';
 import { ConversationService } from './conversation.service';
 import { Message } from './schemas/message.schema';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import ObjectId from 'mongoose';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('conversations')
 export class ConversationController {
@@ -16,9 +28,19 @@ export class ConversationController {
 	}
 
 	// GET /conversations/:id
+	@UseGuards(JwtAuthGuard)
 	@Get(':id')
-	async findBydId(@Param('id') id: mongoose.Types.ObjectId) {
-		return this.conversationService.findById(id);
+	async findBydId(
+		@Param('id') id: mongoose.Types.ObjectId,
+		@Request() req: any,
+	) {
+		const conversation = await this.conversationService.findById(id)
+
+		// Verifica se o usuário faz parte da conversa
+		const userId = req.user.id;
+		const isParticipant = conversation.participants.includes(userId);
+
+		if(!isParticipant) throw new ForbiddenException('Not allowed')
 	}
 
 	// GET /conversations/between?user1=1...&user2=...
