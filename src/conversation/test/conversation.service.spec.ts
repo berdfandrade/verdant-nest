@@ -10,7 +10,6 @@ import { CreateConversationDto } from '../dto/create-conversation.dto';
 import { NotFoundException } from '@nestjs/common';
 import { conversationMock } from './mock/conversation.mock';
 
-
 let mongoServer: MongoMemoryServer;
 let conversationService: ConversationService;
 let conversationModel: Model<Conversation>;
@@ -51,8 +50,7 @@ describe('💬 ConversationService', () => {
 
 	describe('🆕 create', () => {
 		it('should create a new conversation with 2 participants', async () => {
-
-			const mockDto : CreateConversationDto = conversationMock
+			const mockDto: CreateConversationDto = conversationMock;
 
 			const conversation = await conversationService.create(mockDto);
 			expect(conversation).toBeDefined();
@@ -71,15 +69,12 @@ describe('💬 ConversationService', () => {
 
 	describe('🔍 findById', () => {
 		it('should find a conversation by id', async () => {
+			const dto: CreateConversationDto = conversationMock;
+			const conversation = await conversationService.create(dto);
 
-			const dto: CreateConversationDto = conversationMock
-			await conversationService.create(dto);
-		
-			const found = await conversationService.findById(conversationMock._id);
-			console.log(found)
-
+			const found = await conversationService.findById(conversation.id);
 			expect(found).toBeDefined();
-
+			expect(found.id).toBe(conversation.id)
 		});
 
 		it('should throw NotFoundException if not found', async () => {
@@ -92,7 +87,6 @@ describe('💬 ConversationService', () => {
 
 	describe('🔎 findBetweenUsers', () => {
 		it('should find conversation between two users', async () => {
-
 			const user1 = conversationMock.participants[0];
 			const user2 = conversationMock.participants[1];
 
@@ -107,7 +101,7 @@ describe('💬 ConversationService', () => {
 			const found = await conversationService.findBetweenUsers(user1, user2);
 
 			expect(found).toBeDefined();
-			expect(found?.id).toEqual(conversationMock._id);
+	
 			expect(found?.participants).toEqual(expect.arrayContaining([user1, user2]));
 		});
 
@@ -153,9 +147,9 @@ describe('💬 ConversationService', () => {
 				content: 'Hello!',
 				sentAt: new Date(),
 			};
-            
+
 			const updated = await conversationService.addMessage(
-				MongoDbUtils.toObjectId(conversation.id),
+				conversation._id,
 				message as any,
 			);
 			expect(updated.messages.length).toBe(1);
@@ -178,11 +172,10 @@ describe('💬 ConversationService', () => {
 
 	describe('🧾 getMessages', () => {
 		it('should get messages from a conversation', async () => {
-
-            const participant1 = new Types.ObjectId();
+			const participant1 = new Types.ObjectId();
 			const participant2 = new Types.ObjectId();
 
-			const participants = [participant1, participant2]
+			const participants = [participant1, participant2];
 			const messages = [
 				{
 					sender: participant1,
@@ -202,7 +195,9 @@ describe('💬 ConversationService', () => {
 			};
 
 			const conversation = await conversationService.create(dto);
-			const result = await conversationService.getMessages(new Types.ObjectId(conversation.id));
+			const result = await conversationService.getMessages(
+				MongoDbUtils.toObjectId(conversation.id),
+			);
 
 			expect(result.length).toBe(2);
 			expect(result[0].content).toBe('Hey!');

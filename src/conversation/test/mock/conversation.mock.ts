@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 
 export const conversationMock = {
-	_id: new Types.ObjectId(),
+
 	participants: [new Types.ObjectId(), new Types.ObjectId()],
 	messages: [
 		{

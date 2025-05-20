@@ -33,7 +33,7 @@ export class ConversationService {
 	}
 
 	// Busca conversa entre dois usuários (independente da ordem)
-	async findBetweenUsers(id1: Types.ObjectId, id2: Types.ObjectId): Promise<Conversation | null> {
+	async findBetweenUsers(id1: any, id2: any): Promise<Conversation | null> {
     
 		return this.conversationModel
 			.findOne({
@@ -44,7 +44,7 @@ export class ConversationService {
 	}
 
 	// Adiciona uma mensagem a uma conversa (push no array de mensagem)
-	async addMessage(conversationId: Types.ObjectId, message: Message): Promise<Conversation> {
+	async addMessage(conversationId: any, message: Message): Promise<Conversation> {
 		const conversation = await this.conversationModel.findById(conversationId);
 		if (!conversation) throw new NotFoundException('Conversation not found');
 
@@ -57,7 +57,7 @@ export class ConversationService {
 	}
 
 	// Busca mensagens de uma conversa (pode ser paginado)
-	async getMessages(conversationId: Types.ObjectId, limit = 50, skip = 0): Promise<Message[]> {
+	async getMessages(conversationId: any , limit = 50, skip = 0): Promise<Message[]> {
 		
 		const conversation = await this.conversationModel
 			.findById(conversationId)
