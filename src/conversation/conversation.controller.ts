@@ -15,7 +15,7 @@ import {
 import { ConversationService } from './conversation.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import MongoDbUtils from 'src/utils/MongoDB.utils';
+import MongoDbUtils from '../utils/MongoDB.utils';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('💬 Conversations')

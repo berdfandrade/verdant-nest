@@ -90,7 +90,7 @@ describe('🧑 UserService', () => {
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
-        const fakeId = new mongoose.Types.ObjectId().toHexString();
+        const fakeId = new mongoose.Types.ObjectId()
         await expect(userService.getUserById(fakeId)).rejects.toThrow(NotFoundException);
     });
 });
@@ -131,7 +131,7 @@ describe('✏️ updateUser', () => {
     });
 
     it('should throw NotFoundException if user not found', async () => {
-        const fakeId = new mongoose.Types.ObjectId().toHexString();
+        const fakeId = new mongoose.Types.ObjectId()
         await expect(
             userService.updateUser(fakeId, { username: 'NotFound' }),
         ).rejects.toThrow(NotFoundException);
@@ -148,7 +148,7 @@ describe('🗑️ deleteUser', () => {
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
-        const fakeId = new mongoose.Types.ObjectId().toHexString();
+        const fakeId = new mongoose.Types.ObjectId()
         await expect(userService.deleteUser(fakeId)).rejects.toThrow(NotFoundException);
     });
 });
