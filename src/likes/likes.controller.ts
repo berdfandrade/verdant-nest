@@ -1,19 +1,39 @@
-import { Controller, Post, UseGuards, Param, Req } from "@nestjs/common";
-import { LikesService } from "./likes.service";
-import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
+import { Controller, Post, UseGuards, Body } from '@nestjs/common';
+import { LikesService } from './likes.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { LikeUserDto } from './dto/likes.dto';
+import mongoose from 'mongoose';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('❤️ Likes')
 @UseGuards(JwtAuthGuard)
 @Controller('likes')
 export class LikesController {
+	constructor(private readonly likesService: LikesService) {}
 
-  constructor(private readonly likesService: LikesService) {}
+	@Post()
+	async likeUser(@Body() data: LikeUserDto) {
+		const myProfile = new mongoose.Types.ObjectId(data.myProfileId);
+		const likedProfile = new mongoose.Types.ObjectId(data.profileToBeLikedId);
 
-  @Post(":profileToBeLikedId")
-  async likeUser( @Param("profileToBeLikedId") profileToBeLikedId: string, @Req() req ) {
+		const result = await this.likesService.likeProfile({
+			myProfileId: myProfile,
+			profileToBeLikedId: likedProfile,
+		});
 
-    const myProfileId = req.user.userId;
-    const result = await this.likesService.likeProfile( myProfileId, profileToBeLikedId );
-    return result;
-  }
+		return result;
+	}
 
+	@Post('/unlike')
+	async unlikeUser(@Body() data: LikeUserDto) {
+		const myProfile = new mongoose.Types.ObjectId(data.myProfileId);
+		const likedProfile = new mongoose.Types.ObjectId(data.profileToBeLikedId);
+
+		const result = await this.likesService.unlikeProfile({
+			myProfileId: myProfile,
+			profileToBeLikedId: likedProfile,
+		});
+
+		return result;
+	}
 }

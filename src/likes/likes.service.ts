@@ -1,64 +1,108 @@
-import mongoose from 'mongoose';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User } from 'src/user/user.schema';
-import { UserService } from 'src/user/user.service';
+import { Types } from 'mongoose';
+import { UserService } from '../user/user.service';
+
+export interface LikeReponse {
+	liked: boolean;
+	match?: boolean;
+	alreadyLiked?: boolean;
+}
+
+export interface ILikeProfile {
+	profileToBeLikedId: Types.ObjectId;
+	myProfileId: Types.ObjectId;
+}
+
+export interface IUnlikeProfile {
+	myProfileId, profileToBeLikedId: Types.ObjectId
+}
+
+export interface UnlikeProfileResponse {
+	unliked : boolean
+}
 
 @Injectable()
 export class LikesService {
-	constructor(
-		@InjectModel(User.name) private userModel: Model<User>,
-		private readonly userService: UserService,
-	) {}
+	constructor(private readonly userService: UserService) {}
 
-	async likeProfile(myProfileId: string, profileToBeLikedId: string) {
-		try {
-			const myUser = await this.userService.getUserById(myProfileId);
-			const profileToBeLiked = await this.userService.getUserById(profileToBeLikedId);
+	async likeProfile({ profileToBeLikedId, myProfileId }: ILikeProfile): Promise<LikeReponse> {
 
-			if (!myUser || !profileToBeLiked)
-				throw new NotFoundException('User or user to be liked not found');
+		const myUser = await this.userService.getUserById(myProfileId);
+		const targetUser = await this.userService.getUserById(profileToBeLikedId);
 
-			const myUserObjectId = new mongoose.Types.ObjectId(myProfileId);
-			const otherUserObjectId = new mongoose.Types.ObjectId(profileToBeLikedId);
-
-			const alreadyLiked = myUser.likedProfiles.some(
-				id => id.toString() === profileToBeLikedId,
-			);
-
-			if (alreadyLiked) {
-				return { liked: false, alreadyLiked: true };
-			}
-
-			const theyLikedMe = profileToBeLiked.likedProfiles.some(
-				id => id.toString() === myProfileId,
-			);
-
-			if (theyLikedMe) {
-				// 💘 É um match!
-				myUser.matches.push(otherUserObjectId);
-				profileToBeLiked.matches.push(myUserObjectId);
-
-				// Remove da fila de likes (já virou match)
-				myUser.likedProfiles = myUser.likedProfiles.filter(
-					id => id.toString() !== profileToBeLikedId,
-				);
-				profileToBeLiked.likedYouProfiles =
-					profileToBeLiked.likedYouProfiles.filter(
-						id => id.toString() !== myProfileId,
-					);
-			}
-
-			await myUser.save();
-			await profileToBeLiked.save();
-
-			return {
-				liked: true,
-				match: theyLikedMe,
-			};
-		} catch (error) {
-			throw new Error('An error ocurred on like the profile');
+		if (!myUser || !targetUser) {
+			throw new NotFoundException('User or user to be liked not found');
 		}
+
+		const alreadyLiked = myUser.likedProfiles.some(
+			id => id.toString() === profileToBeLikedId.toString(),
+		);
+
+		if (alreadyLiked) {
+			return { liked: false, alreadyLiked: true };
+		}
+
+		const theyLikedMe = targetUser.likedProfiles.some(
+			id => id.toString() === myProfileId.toString(),
+		);
+
+		myUser.likedProfiles.push(new Types.ObjectId(profileToBeLikedId));
+		targetUser.likedYouProfiles.push(new Types.ObjectId(myProfileId));
+
+		if (theyLikedMe) {
+
+			myUser.matches.push(new Types.ObjectId(profileToBeLikedId));
+			targetUser.matches.push(new Types.ObjectId(myProfileId));
+			myUser.likedProfiles = myUser.likedProfiles.filter(
+				id => id.toString() !== profileToBeLikedId.toString(),
+			);
+			targetUser.likedYouProfiles = targetUser.likedYouProfiles.filter(
+				id => id.toString() !== myProfileId.toString(),
+			);
+		}
+
+		await Promise.all([myUser.save(), targetUser.save()]);
+
+		return {
+			liked: true,
+			match: theyLikedMe,
+		};
 	}
+
+	async unlikeProfile({profileToBeLikedId, myProfileId} : ILikeProfile) : Promise<UnlikeProfileResponse>{
+
+		const myUser = await this.userService.getUserById(myProfileId)
+		const targetUser = await this.userService.getUserById(profileToBeLikedId)
+
+		if(!myUser || !targetUser) throw new NotFoundException('User or target user not found')
+		
+		// Remove the like (if exists)
+		myUser.likedProfiles = myUser.likedProfiles.filter(
+			id => id.toString() !== profileToBeLikedId.toString()
+		)
+
+		targetUser.likedYouProfiles = targetUser.likedYouProfiles.filter(
+			id => id.toString() !== myProfileId.toString(),
+		);
+
+		// Remove the match (if exists)
+		const isMatch = myUser.matches.some(
+			id => id.toString() === profileToBeLikedId.toString(),
+		);
+
+		if (isMatch) {
+			myUser.matches = myUser.matches.filter(
+				id => id.toString() !== profileToBeLikedId.toString(),
+			);
+			targetUser.matches = targetUser.matches.filter(
+				id => id.toString() !== myProfileId.toString(),
+			);
+		}
+
+		await Promise.all([myUser.save(), targetUser.save()]);
+		
+
+	return { unliked : true }
+}
+
 }

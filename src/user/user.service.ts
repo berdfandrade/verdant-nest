@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
@@ -30,7 +31,7 @@ export class UserService {
 		return user.save();
 	}
 
-	async getUserById(id: string): Promise<User> {
+	async getUserById(id: Types.ObjectId): Promise<User> {
 		const user = await this.userModel.findById(id);
 		if (!user) throw new NotFoundException('User does not exist');
 		return user;
@@ -46,7 +47,7 @@ export class UserService {
 		return user;
 	}
 
-	async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+	async updateUser(id: Types.ObjectId, updateUserDto: UpdateUserDto): Promise<User> {
 		if (updateUserDto.password) {
 			updateUserDto.password = await this.cryptService.hashPassword(
 				updateUserDto.password,
@@ -62,7 +63,7 @@ export class UserService {
 		return updatedUser;
 	}
 
-	async deleteUser(id: string): Promise<void> {
+	async deleteUser(id: Types.ObjectId): Promise<void> {
 		const result = await this.userModel.findByIdAndDelete(id);
 		if (!result) throw new NotFoundException('User not found');
 	}
