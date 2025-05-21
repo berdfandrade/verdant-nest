@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from 'src/user/user.schema';
-import { UserService } from 'src/user/user.service';
+import { User } from '../user/user.schema';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class LikesService {
