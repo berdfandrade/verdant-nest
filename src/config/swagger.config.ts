@@ -13,30 +13,15 @@ export function setupSwagger(app: INestApplication): void {
 
 	SwaggerModule.setup('api', app, document, {
 		customCss: `
-    /* Esconde logo e texto do Swagger */
+        /* Esconde logo e texto do Swagger */
             .topbar {
             display: none !important;
             
             }
-
-            
-
-        /* Adiciona seu próprio logo */
-        .topbar {
-            content: '';
-            display: inline-block;
-            background-image: url('/logo.png') !important; 
-            background-repeat: no-repeat;
-            background-size: contain;
-            width: 120px;
-            height: 40px;
-            margin-left: 10px;
-        }
-
         /* Cor de fundo opcional */
 `,
 		customSiteTitle: 'Verdant Api',
-		customfavIcon: '/favicon.svg',
+		customfavIcon: '/favico.svg',
 
 	});
 }

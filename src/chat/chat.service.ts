@@ -8,15 +8,24 @@ interface ConnectionInfo {
 
 @Injectable()
 export class ChatService {
-
-    
-	// Map para guardar as conexões ativas: socketId => ConnectionInfo
+	/**
+	 * In-memory storage of all active connections.
+	 * Maps socketId to connection info (user and conversation).
+	 */
 	private connections = new Map<string, ConnectionInfo>();
 
-	// Guardar lista de sockets por conversationId para broadcast
+	/**
+	 * Maps conversationId to the set of socketIds participating in it.
+	 * Enables broadcasting messages to all sockets in a conversation.
+	 */
 	private conversationSockets = new Map<string, Set<string>>();
 
-	// Registrar uma conexão
+	/**
+	 * Registers a new socket connection.
+	 * - Stores the socketId with associated user and conversation.
+	 * - Ensures the conversation has a Set to hold its sockets.
+	 * - Adds the socketId to the appropriate conversation.
+	 */
 	addConnection(socketId: string, userId: string, conversationId: string) {
 		this.connections.set(socketId, { socketId, userId, conversationId });
 
@@ -26,7 +35,12 @@ export class ChatService {
 		this.conversationSockets.get(conversationId)!.add(socketId);
 	}
 
-	// Remover conexão
+	/**
+	 * Removes a socket connection.
+	 * - Deletes the connection from the global connections map.
+	 * - Removes the socketId from the corresponding conversation.
+	 * - If no sockets remain in the conversation, deletes the entry.
+	 */
 	removeConnection(socketId: string) {
 		const connection = this.connections.get(socketId);
 		if (!connection) return;
@@ -42,12 +56,18 @@ export class ChatService {
 		}
 	}
 
-	// Buscar sockets ativos para uma conversationId
+	/**
+	 * Returns all active socketIds associated with a given conversation.
+	 * If none are found, returns an empty array.
+	 */
 	getSocketsByConversation(conversationId: string): string[] {
 		return Array.from(this.conversationSockets.get(conversationId) ?? []);
 	}
 
-	// Buscar conexões de um usuário (se precisar)
+	/**
+	 * Returns all active socketIds associated with a given userId.
+	 * Filters the global connections to match the user.
+	 */
 	getSocketsByUser(userId: string): string[] {
 		return Array.from(this.connections.values())
 			.filter(conn => conn.userId === userId)

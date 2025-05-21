@@ -19,6 +19,7 @@ import MongoDbUtils from 'src/utils/MongoDB.utils';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('💬 Conversations')
+@UseGuards(JwtAuthGuard)
 @Controller('conversations')
 export class ConversationController {
 	constructor(private readonly conversationService: ConversationService) {}
@@ -28,7 +29,7 @@ export class ConversationController {
 		return this.conversationService;
 	}
 
-	@UseGuards(JwtAuthGuard)
+
 	@Get(':id')
 	async findBydId(@Param('id') id: mongoose.Types.ObjectId, @Request() req: any) {
 		const conversation = await this.conversationService.findById(id);
@@ -40,7 +41,7 @@ export class ConversationController {
 		if (!isParticipant) throw new ForbiddenException('Not allowed');
 	}
 
-	@UseGuards(JwtAuthGuard)
+
 	@Get('/between/users')
 	async findBetweenUsers(@Query('user1') user1: string, @Query('user2') user2: string ) {
 
@@ -51,6 +52,7 @@ export class ConversationController {
 		if (!conversation) throw new NotFoundException('Conversation not found');
 		return conversation;
 	}
+
 
 	@Delete(':id')
 	async deleteConversation(@Param('id') id: string) {

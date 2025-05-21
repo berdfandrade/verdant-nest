@@ -1,21 +1,19 @@
-import { Body, Controller, Post, UseGuards, Param, Req } from "@nestjs/common";
+import { Controller, Post, UseGuards, Param, Req } from "@nestjs/common";
 import { LikesService } from "./likes.service";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 
-@Controller()
+@UseGuards(JwtAuthGuard)
+@Controller('likes')
 export class LikesController {
+
   constructor(private readonly likesService: LikesService) {}
 
-  // @UseGuards(JwtAuthGuard)
   @Post(":profileToBeLikedId")
-  async likeUser(
-    @Param("profileToBeLikedId") profileToBeLikedId: string,
-    @Req() req
-  ) {
+  async likeUser( @Param("profileToBeLikedId") profileToBeLikedId: string, @Req() req ) {
+
     const myProfileId = req.user.userId;
-    const result = await this.likesService.likeProfile(
-      myProfileId,
-      profileToBeLikedId
-    );
+    const result = await this.likesService.likeProfile( myProfileId, profileToBeLikedId );
     return result;
   }
+
 }
