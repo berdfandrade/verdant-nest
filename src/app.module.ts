@@ -8,6 +8,7 @@ import { DatabaseModule } from './database/database.module';
 import { ChatGateway } from './chat/chat.gateway';
 import { ConversationModule } from './conversation/conversation.module';
 import { join } from 'path';
+import { LikesModule } from './likes/likes.module';
 
 @Module({
 	imports: [
@@ -20,6 +21,7 @@ import { join } from 'path';
 		ConversationModule,
 		DatabaseModule,
 		ChatGateway,
+		LikesModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
