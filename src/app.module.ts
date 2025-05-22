@@ -7,24 +7,22 @@ import { UserModule } from './user/user.module';
 import { DatabaseModule } from './database/database.module';
 import { ChatGateway } from './chat/chat.gateway';
 import { ConversationModule } from './conversation/conversation.module';
-import { join } from 'path';
 import { LikesModule } from './likes/likes.module';
-import { RedisProvider } from './redis/redis.provider';
+import { RedisModule } from './redis/redis.module';
 import { ChatModule } from './chat/chat.module';
+import { StaticFilesConfig } from './config/staticfiles.config';
 
 @Module({
 	imports: [
 		ConfigModule.forRoot({ isGlobal: true }),
-		ServeStaticModule.forRoot({
-			rootPath: join(__dirname, '..', 'public'),
-			serveRoot: '/',
-		}),
+		ServeStaticModule.forRoot(StaticFilesConfig),
 		UserModule,
 		ConversationModule,
 		DatabaseModule,
 		ChatGateway,
 		LikesModule,
-		ChatModule
+		ChatModule,
+		RedisModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

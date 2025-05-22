@@ -16,11 +16,13 @@ import { CreateConversationDto } from '../../conversation/dto/create-conversatio
 import { RemoveChatConnection } from '../chat.service';
 import { CreateUserDto } from '../../user/dto/create-user.dto';
 import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
+import { RedisService } from '../../redis/redis.service';
 
 let mongoServer: MongoMemoryServer;
 let chatService: ChatService;
 let userService: UserService;
 let conversationService: ConversationService;
+let redisService: RedisService;
 let conversationModel: Model<Conversation>;
 let userModel: Model<User>;
 
@@ -40,12 +42,11 @@ beforeAll(async () => {
 
 	userService = moduleFixture.get<UserService>(UserService);
 	userModel = moduleFixture.get<Model<User>>(getModelToken(User.name));
-	conversationModel = moduleFixture.get<Model<Conversation>>(
-		getModelToken(Conversation.name),
-	);
+	conversationModel = moduleFixture.get<Model<Conversation>>(getModelToken(Conversation.name));
 	conversationService = moduleFixture.get<ConversationService>(ConversationService);
 	chatService = moduleFixture.get<ChatService>(ChatService);
 	conversationService = moduleFixture.get<ConversationService>(ConversationService);
+	redisService = moduleFixture.get<RedisService>(RedisService);
 });
 
 beforeEach(async () => {
@@ -56,10 +57,10 @@ beforeEach(async () => {
 afterAll(async () => {
 	await mongoose.disconnect();
 	await mongoServer.stop();
-	await chatService['redis'].quit();
+	await redisService.onModuleDestroy()
 });
 
-describe('ChatService', () => {
+describe('🦜 ChatService', () => {
 	it('Should be defined', () => {
 		expect(chatService).toBeDefined();
 	});
@@ -97,7 +98,7 @@ describe('ChatService', () => {
 		// Adiciona a conexão no redis
 		await chatService.addConnection(connection);
 
-		const redisValue = await chatService['redis'].get(`connection:${mockChatSocket}`);
+		const redisValue = await redisService.getKey(`connection:${mockChatSocket}`);
 		if (!redisValue) return 'Could not retrive redis value';
 
 		const parsed = JSON.parse(redisValue);
@@ -107,16 +108,11 @@ describe('ChatService', () => {
 
 		// Remove e verifica a remoção
 		await chatService.removeConnection(connectionToBeRemoved);
-		const redisAfterDelete = await chatService['redis'].get(
-			`connection:${mockChatSocket}`,
-		);
+		const redisAfterDelete = await redisService.getKey(`connection:${mockChatSocket}`);
 		expect(redisAfterDelete).toBeNull();
 
-		const isMember = await chatService['redis'].sismember(
-			`conversation:${conversation.id}`,
-			mockChatSocket,
-		);
-		expect(isMember).toBe(0); // 0 = não é mais membro
+		const isMember = await redisService.isMemberOfSet(`conversation:${conversation.id}`, mockChatSocket);
+		expect(isMember).toBe(false); // 0 = não é mais membro
 	});
 
 	it('Should remove a Redis connection', async () => {
@@ -154,15 +150,10 @@ describe('ChatService', () => {
 
 		// Remove a conexão do redis
 		await chatService.removeConnection(connectionToBeRemoved);
-		const redisAfterDelete = await chatService['redis'].get(
-			`connection:${mockChatSocket}`,
-		);
+		const redisAfterDelete = await redisService.getKey(`connection:${mockChatSocket}`);
 		expect(redisAfterDelete).toBeNull();
 
-		const isMember = await chatService['redis'].sismember(
-			`conversation:${conversation.id}`,
-			mockChatSocket,
-		);
-		expect(isMember).toBe(0);
+		const isMember = await redisService.isMemberOfSet(`conversation:${conversation.id}`, mockChatSocket);
+		expect(isMember).toBe(false);
 	});
 });
