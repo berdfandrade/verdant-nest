@@ -1,76 +1,87 @@
-import { Injectable } from '@nestjs/common';
+import { Types } from 'mongoose';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { ConversationService } from '../conversation/conversation.service';
+import Redis from 'ioredis';
 
-interface ConnectionInfo {
-	socketId: string;
-	userId: string;
-	conversationId: string;
+export interface ChatConnection {
+	socketId, userId, conversationId : string
+}
+
+export interface RemoveChatConnection {
+	socketId, conversationId : string
 }
 
 @Injectable()
 export class ChatService {
-	/**
-	 * In-memory storage of all active connections.
-	 * Maps socketId to connection info (user and conversation).
-	 */
-	private connections = new Map<string, ConnectionInfo>();
+	constructor(
+		@Inject('REDIS_CLIENT')
+		private readonly redis: Redis,
+		private readonly conversationService: ConversationService,
+	) {}
 
-	/**
-	 * Maps conversationId to the set of socketIds participating in it.
-	 * Enables broadcasting messages to all sockets in a conversation.
-	 */
-	private conversationSockets = new Map<string, Set<string>>();
+	async enterTheConversation(myProfileId: Types.ObjectId, targetUserId: Types.ObjectId) {
+		const conversation = await this.conversationService.findBetweenUsers(
+			myProfileId,
+			targetUserId,
+		);
 
-	/**
-	 * Registers a new socket connection.
-	 * - Stores the socketId with associated user and conversation.
-	 * - Ensures the conversation has a Set to hold its sockets.
-	 * - Adds the socketId to the appropriate conversation.
-	 */
-	addConnection(socketId: string, userId: string, conversationId: string) {
-		this.connections.set(socketId, { socketId, userId, conversationId });
-
-		if (!this.conversationSockets.has(conversationId)) {
-			this.conversationSockets.set(conversationId, new Set());
+		if (!conversation) {
+			return { userAllowed: false };
 		}
-		this.conversationSockets.get(conversationId)!.add(socketId);
+
+		return { userAllowed: true, conversationId: conversation.id };
 	}
 
-	/**
-	 * Removes a socket connection.
-	 * - Deletes the connection from the global connections map.
-	 * - Removes the socketId from the corresponding conversation.
-	 * - If no sockets remain in the conversation, deletes the entry.
-	 */
-	removeConnection(socketId: string) {
-		const connection = this.connections.get(socketId);
-		if (!connection) return;
+	async createRoom(conversationId: Types.ObjectId) {
+		// Verifica se a conversa realmente existe no banco
+		const conversation = await this.conversationService.findById(conversationId);
 
-		this.connections.delete(socketId);
+		if (!conversation) throw new NotFoundException('Conversation not found');
 
-		const sockets = this.conversationSockets.get(connection.conversationId);
-		if (sockets) {
-			sockets.delete(socketId);
-			if (sockets.size === 0) {
-				this.conversationSockets.delete(connection.conversationId);
-			}
+		return { created: true, conversationId };
+	}
+
+	async testRedisConnection(): Promise<string> {
+		try {
+			// Escreve um valor no Redis
+			await this.redis.set('test:key', 'Hello from Redis!');
+
+			// Lê o valor de volta
+			const value = await this.redis.get('test:key');
+
+			return `Redis says: ${value}`;
+		} catch (error) {
+			console.error('Redis connection error:', error);
+			return 'Failed to connect to Redis';
 		}
 	}
 
-	/**
-	 * Returns all active socketIds associated with a given conversation.
-	 * If none are found, returns an empty array.
-	 */
-	getSocketsByConversation(conversationId: string): string[] {
-		return Array.from(this.conversationSockets.get(conversationId) ?? []);
-	}
+	async addConnection({socketId, userId, conversationId} : ChatConnection) {
 
-	/**
-	 * Returns all active socketIds associated with a given userId.
-	 * Filters the global connections to match the user.
-	 */
-	getSocketsByUser(userId: string): string[] {
-		return Array.from(this.connections.values())
-			.filter(conn => conn.userId === userId)
-			.map(conn => conn.socketId);
+		// Armazena os dados da conexão JSON
+		const connKey = `connection:${socketId}`
+
+		// É um set com todos os socketsIds conectados àquela conversa
+		const convKey = `conversation:${conversationId}`
+
+		await this.redis.set(connKey, JSON.stringify({ socketId, userId, conversationId }))
+		await this.redis.sadd(convKey, socketId)
 	}
+	
+	async removeConnection({socketId, conversationId} : RemoveChatConnection) {
+		
+		const connKey = `connection:${socketId}`
+		const convKey = `conversation:${conversationId}`
+
+		// Remove os dados da conexão indidual
+		await this.redis.del(connKey)
+
+		// Remove o socketId do conjunto da conversa
+		await this.redis.srem(convKey, socketId)
+
+		// (Opcional) Verifica se o set está vazio e deleta 
+		// a chave do set se necessário
+		const remainingSockets = await this.redis.scard(connKey)
+		if(remainingSockets === 0) { await this.redis.del(connKey) }
+	}	
 }

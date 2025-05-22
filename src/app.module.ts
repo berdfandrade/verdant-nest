@@ -9,6 +9,8 @@ import { ChatGateway } from './chat/chat.gateway';
 import { ConversationModule } from './conversation/conversation.module';
 import { join } from 'path';
 import { LikesModule } from './likes/likes.module';
+import { RedisProvider } from './redis/redis.provider';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
 	imports: [
@@ -22,6 +24,7 @@ import { LikesModule } from './likes/likes.module';
 		DatabaseModule,
 		ChatGateway,
 		LikesModule,
+		ChatModule
 	],
 	controllers: [AppController],
 	providers: [AppService],

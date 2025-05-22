@@ -19,6 +19,15 @@ export const conversationMock = {
 	archivedAt: undefined, // ✅ Corrigido aqui
 };
 
+export const emptyConvesationMock = {
+	participants: [new Types.ObjectId(), new Types.ObjectId()],
+		messages: [],
+		statedAt : new Date(),
+		isActive : true,
+		archivedAt : undefined
+
+}
+
 export const mockerConversation = (participant1Id?, participant2Id?) => {
 
 	return {

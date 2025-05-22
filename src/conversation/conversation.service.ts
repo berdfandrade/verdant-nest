@@ -6,6 +6,11 @@ import { Conversation, ConversationDocument } from './schemas/conversation.schem
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import MongoDbUtils from '../utils/MongoDB.utils';
 
+interface IFindConversationUsers {
+	id1: Types.ObjectId
+	id2 : Types.ObjectId
+}
+
 @Injectable()
 export class ConversationService {
 	constructor(
@@ -31,10 +36,10 @@ export class ConversationService {
 		if (!conversation) throw new NotFoundException(`Conversation not found with ID ${id}`);
 		return conversation;
 	}
-
-	// Busca conversa entre dois usuários (independente da ordem)
-	async findBetweenUsers(id1: any, id2: any): Promise<Conversation | null> {
-    
+	
+	// Busca conversa entre dois users
+	async findBetweenUsers( id1 : Types.ObjectId, id2 : Types.ObjectId): Promise<Conversation | null> {
+		
 		return this.conversationModel
 			.findOne({
 				participants: { $all: [id1, id2] },
