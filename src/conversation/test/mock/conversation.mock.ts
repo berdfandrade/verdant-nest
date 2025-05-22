@@ -16,7 +16,7 @@ export const conversationMock = {
 	],
 	startedAt: new Date('2025-05-01T09:58:00Z'),
 	isActive: true,
-	archivedAt: undefined, // ✅ Corrigido aqui
+	archivedAt: undefined, 
 };
 
 export const emptyConvesationMock = {

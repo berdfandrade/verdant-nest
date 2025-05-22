@@ -12,8 +12,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Conversation } from '../../conversation/schemas/conversation.schema';
 import { ConversationModule } from '../../conversation/conversation.module';
 import { ChatModule } from '../chat.module';
-import { CreateConversationDto } from '../../conversation/dto/create-conversation.dto';
-import { RemoveChatConnection } from '../chat.service';
 import { CreateUserDto } from '../../user/dto/create-user.dto';
 import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
 import { RedisService } from '../../redis/redis.service';
@@ -65,95 +63,39 @@ describe('🦜 ChatService', () => {
 		expect(chatService).toBeDefined();
 	});
 
-	it('Should a connection create a connection in Redis', async () => {
-		// Primeiro crio os dois users
-		const userDto: CreateUserDto = mockUser;
-		const userDto2: CreateUserDto = mockUserMaria;
+	it('should create and remove a connection in Redis', async () => {
+		const user1 = await userService.create(mockUser as CreateUserDto);
+		const user2 = await userService.create(mockUserMaria as CreateUserDto);
 
-		const user1 = await userService.create(userDto);
-		const user2 = await userService.create(userDto2);
-
-		// Conversa DTO
-		const createConversation: CreateConversationDto = {
+		const conversation = await conversationService.create({
 			participants: [user1.id, user2.id],
-		};
+		});
 
-		// Depois crio a conversa entre eles no DB
-		const conversation = await conversationService.create(createConversation);
+		const mockSocketId = '1237845121';
 
-		const mockChatSocket = '1237845121';
-
-		// Conexão mockada
 		const connection: ChatConnection = {
 			userId: user1.id,
 			conversationId: conversation.id,
-			socketId: mockChatSocket,
+			socketId: mockSocketId,
 		};
 
-		const connectionToBeRemoved: RemoveChatConnection = {
-			socketId: mockChatSocket,
-			conversationId: conversation.id,
-		};
-
-		// Adiciona a conexão no redis
 		await chatService.addConnection(connection);
 
-		const redisValue = await redisService.getKey(`connection:${mockChatSocket}`);
-		if (!redisValue) return 'Could not retrive redis value';
+		const redisValue = await redisService.getKey(`connection:${mockSocketId}`);
+		expect(redisValue).toBeDefined();
 
-		const parsed = JSON.parse(redisValue);
-		expect(parsed.socketId).toBe(connection.socketId);
-		expect(parsed.userId).toBe(connection.userId);
-		expect(parsed.conversationId).toBe(connection.conversationId);
+		const parsed = JSON.parse(redisValue!);
+		expect(parsed).toMatchObject(connection);
 
-		// Remove e verifica a remoção
-		await chatService.removeConnection(connectionToBeRemoved);
-		const redisAfterDelete = await redisService.getKey(`connection:${mockChatSocket}`);
-		expect(redisAfterDelete).toBeNull();
-
-		const isMember = await redisService.isMemberOfSet(`conversation:${conversation.id}`, mockChatSocket);
-		expect(isMember).toBe(false); // 0 = não é mais membro
-	});
-
-	it('Should remove a Redis connection', async () => {
-		// Primeiro crio os dois users
-		const userDto: CreateUserDto = mockUser;
-		const userDto2: CreateUserDto = mockUserMaria;
-
-		const user1 = await userService.create(userDto);
-		const user2 = await userService.create(userDto2);
-
-		// Conversa DTO
-		const createConversation: CreateConversationDto = {
-			participants: [user1.id, user2.id],
-		};
-
-		// Depois crio a conversa entre eles no DB
-		const conversation = await conversationService.create(createConversation);
-
-		const mockChatSocket = '1237845121';
-
-		// Conexão mockada
-		const connection: ChatConnection = {
-			userId: user1.id,
+		await chatService.removeConnection({
+			socketId: mockSocketId,
 			conversationId: conversation.id,
-			socketId: mockChatSocket,
-		};
+		});
 
-		const connectionToBeRemoved: RemoveChatConnection = {
-			socketId: mockChatSocket,
-			conversationId: conversation.id,
-		};
+		const after = await redisService.getKey(`connection:${mockSocketId}`);
+		expect(after).toBeNull();
 
-		// Adiciona a conexão no redis
-		await chatService.addConnection(connection);
-
-		// Remove a conexão do redis
-		await chatService.removeConnection(connectionToBeRemoved);
-		const redisAfterDelete = await redisService.getKey(`connection:${mockChatSocket}`);
-		expect(redisAfterDelete).toBeNull();
-
-		const isMember = await redisService.isMemberOfSet(`conversation:${conversation.id}`, mockChatSocket);
+		const isMember = await redisService.isMemberOfSet(`conversation:${conversation.id}`, mockSocketId);
 		expect(isMember).toBe(false);
 	});
 });

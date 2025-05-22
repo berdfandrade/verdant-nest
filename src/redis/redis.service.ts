@@ -2,7 +2,7 @@ import { Injectable, Inject, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 
 @Injectable()
-export class RedisService implements OnModuleDestroy{
+export class RedisService implements OnModuleDestroy {
 	constructor(
 		@Inject('REDIS_CLIENT')
 		private readonly redis: Redis,
@@ -47,7 +47,9 @@ export class RedisService implements OnModuleDestroy{
 		return this.redis.smembers(key);
 	}
 
-    async onModuleDestroy() {
-        await this.redis.quit();
-    }
+	async onModuleDestroy() {
+		if (this.redis.status !== 'end') {
+			await this.redis.quit();
+		}
+	}
 }

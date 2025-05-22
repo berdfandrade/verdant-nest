@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { model } from 'mongoose';
 import MongoDbUtils from '../../utils/MongoDB.utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongooseModule, getModelToken } from '@nestjs/mongoose';
@@ -7,31 +7,22 @@ import { Conversation, ConversationSchema } from '../schemas/conversation.schema
 import { Model, Types } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { CreateConversationDto } from '../dto/create-conversation.dto';
-import { NotFoundException } from '@nestjs/common';
+import { INestApplication, NotFoundException } from '@nestjs/common';
 import { conversationMock } from './mock/conversation.mock';
+import { SetupTestApp } from '../../../test/test-setup';
 
-let mongoServer: MongoMemoryServer;
+let app: INestApplication;
 let conversationService: ConversationService;
 let conversationModel: Model<Conversation>;
+let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
-	mongoServer = await MongoMemoryServer.create();
-	const mongoUri = mongoServer.getUri();
+	const { app: testApp, moduleFixture, mongoServer: server } = await SetupTestApp();
 
-	const moduleFixture: TestingModule = await Test.createTestingModule({
-		imports: [
-			MongooseModule.forRoot(mongoUri),
-			MongooseModule.forFeature([
-				{ name: Conversation.name, schema: ConversationSchema },
-			]),
-		],
-		providers: [ConversationService],
-	}).compile();
-
-	conversationService = moduleFixture.get<ConversationService>(ConversationService);
-	conversationModel = moduleFixture.get<Model<Conversation>>(
-		getModelToken(Conversation.name),
-	);
+	app = testApp;
+	mongoServer = server;
+	conversationService = moduleFixture.get(ConversationService);
+	conversationModel = moduleFixture.get<Model<Conversation>>(getModelToken(Conversation.name));
 });
 
 beforeEach(async () => {
@@ -41,6 +32,7 @@ beforeEach(async () => {
 afterAll(async () => {
 	await mongoose.disconnect();
 	await mongoServer.stop();
+	await app.close();
 });
 
 describe('💬 ConversationService', () => {
@@ -74,7 +66,7 @@ describe('💬 ConversationService', () => {
 
 			const found = await conversationService.findById(conversation.id);
 			expect(found).toBeDefined();
-			expect(found.id).toBe(conversation.id)
+			expect(found.id).toBe(conversation.id);
 		});
 
 		it('should throw NotFoundException if not found', async () => {
@@ -101,7 +93,7 @@ describe('💬 ConversationService', () => {
 			const found = await conversationService.findBetweenUsers(user1, user2);
 
 			expect(found).toBeDefined();
-	
+
 			expect(found?.participants).toEqual(expect.arrayContaining([user1, user2]));
 		});
 
@@ -164,9 +156,9 @@ describe('💬 ConversationService', () => {
 				sentAt: new Date(),
 			};
 
-			await expect(
-				conversationService.addMessage(fakeId, message as any),
-			).rejects.toThrow(NotFoundException);
+			await expect(conversationService.addMessage(fakeId, message as any)).rejects.toThrow(
+				NotFoundException,
+			);
 		});
 	});
 
