@@ -3,8 +3,9 @@ import MongoDbUtils from '../../utils/MongoDB.utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { ConversationService } from '../conversation.service';
-import { Conversation, ConversationSchema } from '../schemas/conversation.schema';
+import { Conversation  } from '../schemas/conversation.schema';
 import { Model, Types } from 'mongoose';
+import { MessagesService } from '../../messages/messages.service';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { CreateConversationDto } from '../dto/create-conversation.dto';
 import { INestApplication, NotFoundException } from '@nestjs/common';
@@ -15,6 +16,7 @@ let app: INestApplication;
 let conversationService: ConversationService;
 let conversationModel: Model<Conversation>;
 let mongoServer: MongoMemoryServer;
+let messagesService: MessagesService;
 
 beforeAll(async () => {
 	const { app: testApp, moduleFixture, mongoServer: server } = await SetupTestApp();
@@ -22,6 +24,7 @@ beforeAll(async () => {
 	app = testApp;
 	mongoServer = server;
 	conversationService = moduleFixture.get(ConversationService);
+	messagesService = moduleFixture.get(MessagesService);
 	conversationModel = moduleFixture.get<Model<Conversation>>(getModelToken(Conversation.name));
 });
 
@@ -122,77 +125,46 @@ describe('💬 ConversationService', () => {
 		});
 	});
 
-	describe('📩 addMessage', () => {
-		it('should add a message to conversation', async () => {
-			const participant1 = new Types.ObjectId();
-			const participant2 = new Types.ObjectId();
-
-			const dto: CreateConversationDto = {
-				participants: [participant1, participant2],
-				messages: [],
-			};
-
-			const conversation = await conversationService.create(dto);
-
-			const message = {
-				sender: dto.participants[0],
-				content: 'Hello!',
-				sentAt: new Date(),
-			};
-
-			const updated = await conversationService.addMessage(
-				conversation._id,
-				message as any,
-			);
-			expect(updated.messages.length).toBe(1);
-			expect(updated.messages[0].content).toBe('Hello!');
-		});
-
-		it('should throw if conversation not found', async () => {
-			const fakeId = new Types.ObjectId();
-			const message = {
-				sender: new Types.ObjectId(),
-				content: 'Hi',
-				sentAt: new Date(),
-			};
-
-			await expect(conversationService.addMessage(fakeId, message as any)).rejects.toThrow(
-				NotFoundException,
-			);
-		});
-	});
-
 	describe('🧾 getMessages', () => {
 		it('should get messages from a conversation', async () => {
 			const participant1 = new Types.ObjectId();
 			const participant2 = new Types.ObjectId();
 
 			const participants = [participant1, participant2];
-			const messages = [
-				{
-					sender: participant1,
-					content: 'Hey!',
-					sentAt: new Date(),
-				},
-				{
-					sender: participant2,
-					content: 'Hello!',
-					sentAt: new Date(),
-				},
-			];
 
+			// Cria a conversa sem mensagens inicialmente
 			const dto: CreateConversationDto = {
 				participants,
-				messages,
 			};
 
 			const conversation = await conversationService.create(dto);
-			const result = await conversationService.getMessages(
-				MongoDbUtils.toObjectId(conversation.id),
-			);
 
+			// Cria mensagens associadas a essa conversa
+			const message1 = {
+				sender: participant1,
+				conversationId: conversation.id,
+				content: 'Hey!',
+				sentAt: new Date(),
+			};
+
+			const message2 = {
+				sender: participant2,
+				conversationId: conversation.id,
+				content: 'Hello!',
+				sentAt: new Date(),
+			};
+
+			await messagesService.create(message1);
+			await messagesService.create(message2);
+
+			// Agora sim, pega as mensagens pela função
+			const result = await conversationService.getMessages(conversation.id);
+			console.log(result)
 			expect(result.length).toBe(2);
+			// Como o getMessages ordena por sentAt DESC e não faz reverse,
+			// a mensagem mais recente vem primeiro
 			expect(result[0].content).toBe('Hey!');
+			expect(result[1].content).toBe('Hello!');
 		});
 
 		it('should throw if conversation not found', async () => {

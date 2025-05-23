@@ -11,6 +11,7 @@ import { LikesModule } from './likes/likes.module';
 import { RedisModule } from './redis/redis.module';
 import { ChatModule } from './chat/chat.module';
 import { StaticFilesConfig } from './config/staticfiles.config';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
 	imports: [
@@ -23,6 +24,7 @@ import { StaticFilesConfig } from './config/staticfiles.config';
 		LikesModule,
 		ChatModule,
 		RedisModule,
+		MessagesModule
 	],
 	controllers: [AppController],
 	providers: [AppService],
