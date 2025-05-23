@@ -1,17 +1,17 @@
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Module } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
 import { Conversation, ConversationSchema } from './schemas/conversation.schema';
-import { MessageSchema, Message } from './schemas/message.schema';
 import { ConversationController } from './conversation.controller';
+import { MessagesModule } from '../messages/messages.module';
 
 @Module({
 	imports: [
-		MongooseModule.forFeature
-        ([{ name: Conversation.name, schema: ConversationSchema }]),
+		forwardRef(() => MessagesModule),
+		MongooseModule.forFeature([{ name: Conversation.name, schema: ConversationSchema }]),
 	],
 	controllers: [ConversationController],
 	providers: [ConversationService],
-	exports: [ConversationService],
+	exports: [ConversationService, MongooseModule],
 })
 export class ConversationModule {}
