@@ -1,9 +1,7 @@
 import mongoose, { model } from 'mongoose';
-import MongoDbUtils from '../../utils/MongoDB.utils';
-import { Test, TestingModule } from '@nestjs/testing';
-import { MongooseModule, getModelToken } from '@nestjs/mongoose';
+import { getModelToken } from '@nestjs/mongoose';
 import { ConversationService } from '../conversation.service';
-import { Conversation  } from '../schemas/conversation.schema';
+import { Conversation } from '../schemas/conversation.schema';
 import { Model, Types } from 'mongoose';
 import { MessagesService } from '../../messages/messages.service';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -159,7 +157,7 @@ describe('💬 ConversationService', () => {
 
 			// Agora sim, pega as mensagens pela função
 			const result = await conversationService.getMessages(conversation.id);
-			console.log(result)
+
 			expect(result.length).toBe(2);
 			// Como o getMessages ordena por sentAt DESC e não faz reverse,
 			// a mensagem mais recente vem primeiro

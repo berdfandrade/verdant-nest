@@ -10,7 +10,7 @@ import { UserService } from '../../user/user.service';
 import { LikesModule } from '../likes.module';
 import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
 import { CreateUserDto } from '../../user/dto/create-user.dto';
-import { ILikeProfile } from '../likes.service';
+import { LikeProfile } from '../likes.service';
 
 let mongoServer: MongoMemoryServer;
 let likesService: LikesService;
@@ -56,7 +56,7 @@ describe('❤️  LikesService', () => {
 		const user = await userService.create(dto);
 		const user2 = await userService.create(dto2);
 
-		const likeObj: ILikeProfile = {
+		const likeObj: LikeProfile = {
 			myProfileId: user.id,
 			profileToBeLikedId: user2.id,
 		};
@@ -79,7 +79,7 @@ describe('❤️  LikesService', () => {
 		await user2FromDb.save();
 
 		// Agora o user1 curte o user2, deve gerar o match
-		const likeObj: ILikeProfile = {
+		const likeObj: LikeProfile = {
 			myProfileId: user1.id,
 			profileToBeLikedId: user2.id,
 		};
