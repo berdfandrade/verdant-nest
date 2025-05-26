@@ -4,15 +4,15 @@ import { Types } from 'mongoose';
 export const mockMessage = {
 	sender: new Types.ObjectId(),
 	content: 'Olá! Tudo bem?',
-    convesationId : '',
+	convesationId: '',
 	sentAt: new Date('2025-05-01T10:00:00Z'),
 };
 
 export const mockMessage2 = {
-    sender: new Types.ObjectId(),
+	sender: new Types.ObjectId(),
 	content: 'Vou bem e você?',
-    convesationId : '',
+	convesationId: '',
 	sentAt: new Date('2025-05-01T10:00:30Z'),
 };
 
-export const mockMessages : Message[] = [mockMessage, mockMessage2]
+export const mockMessages = [mockMessage, mockMessage2];

@@ -25,7 +25,7 @@ export interface MessageResponse {
 	sentAt : Date
 }
 
-interface SendMessage {
+export interface SendMessage {
 	sender : Types.ObjectId
 	conversationId : Types.ObjectId
 	content : string
@@ -78,9 +78,7 @@ export class ChatService {
 	async enterTheConversation({ myProfileId, targetUserId } : EnterTheConversation) {
 		const conversation = await this.conversationService.findBetweenUsers(myProfileId, targetUserId);
 
-		if (!conversation) {
-			return { userAllowed: false };
-		}
+		if (!conversation) { return { userAllowed: false } }
 
 		return { userAllowed: true, conversationId: conversation.id };
 	}

@@ -5,10 +5,9 @@ import { AppModule } from '../../app.module';
 import mongoose from 'mongoose';
 import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
 import { Model } from 'mongoose';
-import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { User, UserSchema } from '../../user/user.schema';
 import { getModelToken, MongooseModule } from '@nestjs/mongoose';
-import { ILikeProfile, LikesService } from '../likes.service';
+import {  LikesService } from '../likes.service';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../../user/user.service';
 import { AuthModule } from '../../auth/auth.module';
@@ -51,9 +50,10 @@ beforeEach(async () => {
 afterAll(async () => {
 	await mongoose.disconnect();
 	await mongoServer.stop();
+	await app.close()
 });
 
-describe('LikesController (e2e)', () => {
+describe('❤️  LikesController (e2e)', () => {
 	it('Should return 200 if the user liked other user', async () => {
 		const dto = mockUser;
 		const dto2 = mockUserMaria;

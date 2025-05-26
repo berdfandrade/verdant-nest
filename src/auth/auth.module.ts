@@ -8,14 +8,12 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { PassportModule } from '@nestjs/passport';
 import { CryptService } from '../security/crypt.service';
 import { CryptModule } from '../security/crypt.module';
+import { JwtConfig } from '../config/jwt.config';
 
 @Module({
 	imports: [
 		PassportModule,
-		JwtModule.register({
-			secret: process.env.JWT_SECRET,
-			signOptions: { expiresIn: '1h' },
-		}),
+		JwtModule.register(JwtConfig),
 		UserModule,
 		CryptModule,
 	],
