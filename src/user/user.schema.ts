@@ -1,8 +1,15 @@
+import { Model } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
+
+export interface UserModel extends Model<User> {
+  showNearbyUsers(profile: User, maxDistanceKm: number): Promise<User[]>;
+}
+
 @Schema({ timestamps: { createdAt: 'createdAt', updatedAt: false } })
 export class User extends Document {
+  
   @Prop({ default: false })
   premium: boolean;
 
