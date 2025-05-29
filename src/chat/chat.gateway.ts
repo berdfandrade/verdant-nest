@@ -1,50 +1,72 @@
 import {
 	WebSocketGateway,
+	WebSocketServer,
 	SubscribeMessage,
 	OnGatewayInit,
+	OnGatewayConnection,
 	OnGatewayDisconnect,
 	MessageBody,
 	ConnectedSocket,
-	OnGatewayConnection,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
-import { Socket, Server } from 'socket.io';
-import { SendMessage } from './chat.service';
+import { Server, Socket } from 'socket.io';
+
+interface SendMessagePayload {
+	conversationId: string;
+	sender: string;
+	text: string;
+}
 
 @WebSocketGateway({
 	cors: {
-		origin: '*',
+		origin: '*', // configure conforme necessário
 	},
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
-	private Logger: Logger = new Logger('ChatGateway');
+	private logger = new Logger('ChatGateway');
 
-	afterInit(server: Server) {}
-		// this.Logger.log('WebSocket init');
-	
+	@WebSocketServer()
+	server: Server;
+
+	afterInit(server: Server) {
+		this.logger.log('WebSocket Server iniciado');
+	}
 
 	handleConnection(client: Socket) {
-		this.Logger.log(`Client connected: ${client.id}`);
+		this.logger.log(`Cliente conectado: ${client.id}`);
 	}
 
 	handleDisconnect(client: Socket) {
-		this.Logger.log(`Client disconnected : ${client.id}`);
-	}
-
-	@SubscribeMessage('send_message')
-	handleMessage(@MessageBody() data: SendMessage, @ConnectedSocket() client: Socket) {
-
-		this.Logger.log(`Mensagem de ${data.sender}`);
-		client.broadcast.emit('receive_message', data);
-		return { status: 'ok', ...data };
+		this.logger.log(`Cliente desconectado: ${client.id}`);
 	}
 
 	@SubscribeMessage('join_conversation')
 	handleJoinConversation(
-		
-		@MessageBody() data: { conversationId: string }, @ConnectedSocket() client: Socket) {
-		
+		@MessageBody() data: { conversationId: string },
+		@ConnectedSocket() client: Socket,
+	) {
 		client.join(data.conversationId);
-		this.Logger.log(`Client ${client.id} joined room ${data.conversationId}`);
+		this.logger.log(`Cliente ${client.id} entrou na conversa ${data.conversationId}`);
+		client.emit('joined_conversation', { conversationId: data.conversationId });
+	}
+
+	@SubscribeMessage('send_message')
+	handleSendMessage(@MessageBody() data: SendMessagePayload, @ConnectedSocket() client: Socket) {
+		if (!data || !data.conversationId || !data.sender || !data.text) {
+			this.logger.warn(
+				`Payload inválido recebido de ${client.id}: ${JSON.stringify(data)}`,
+			);
+			return;
+		}
+
+		const { conversationId, sender, text } = data;
+		this.logger.log(`Mensagem de ${sender} na conversa ${conversationId}: ${text}`);
+
+		this.server.to(conversationId).emit('receive_message', {
+			sender,
+			text,
+			conversationId,
+			timestamp: new Date().toISOString(),
+		});
 	}
 }

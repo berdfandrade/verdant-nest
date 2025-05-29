@@ -9,6 +9,6 @@ import { MessagesModule } from '../messages/messages.module';
 @Module({
 	imports: [ConversationModule, RedisModule, MessagesModule],
 	controllers: [ChatController],
-	providers: [ChatGateway, ChatService],
+	providers: [ChatService],
 })
 export class ChatModule {}
