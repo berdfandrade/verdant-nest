@@ -5,7 +5,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { DatabaseModule } from './database/database.module';
-import { ChatGateway } from './chat/chat.gateway';
 import { ConversationModule } from './conversation/conversation.module';
 import { LikesModule } from './likes/likes.module';
 import { RedisModule } from './redis/redis.module';
@@ -22,9 +21,7 @@ import { forwardRef } from '@nestjs/common';
 		UserModule,
 		ConversationModule,
 		DatabaseModule,
-		ChatGateway,
 		LikesModule,
-
 		RedisModule,
 		MessagesModule,
 	],

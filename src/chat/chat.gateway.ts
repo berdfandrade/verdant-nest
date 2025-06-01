@@ -21,7 +21,7 @@ import { SendMessage } from './chat.service';
 
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	constructor(
-		// private readonly chatService: ChatService,
+		private readonly chatService: ChatService,
 	) {}
 
 	private logger = new Logger('ChatGateway');
@@ -55,7 +55,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	async handleSendMessage(@MessageBody() data: SendMessage, @ConnectedSocket() client: Socket) {
 		
 		// Para salvar a mensagem
-		// const savedMessage = await this.chatService.sendMessage(data);
+		const savedMessage = await this.chatService.sendMessage(data);
 
 		// Log apenas
 		this.logger.log(`USER_ID : ${data.sender}: ${JSON.stringify(data)}`);
