@@ -10,19 +10,17 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-
-interface SendMessagePayload {
-	conversationId: string;
-	sender: string;
-	text: string;
-}
+import { ChatService } from './chat.service';
+import { SendMessage } from './chat.service';
 
 @WebSocketGateway({
 	cors: {
-		origin: '*', // configure conforme necessário
+		origin: '*',
 	},
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+	constructor(private readonly chatService: ChatService) {}
+
 	private logger = new Logger('ChatGateway');
 
 	@WebSocketServer()
@@ -51,22 +49,15 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	}
 
 	@SubscribeMessage('send_message')
-	handleSendMessage(@MessageBody() data: SendMessagePayload, @ConnectedSocket() client: Socket) {
-		if (!data || !data.conversationId || !data.sender || !data.text) {
-			this.logger.warn(
-				`Payload inválido recebido de ${client.id}: ${JSON.stringify(data)}`,
-			);
-			return;
-		}
+	async handleSendMessage(@MessageBody() data: SendMessage, @ConnectedSocket() client: Socket) {
+		
+		// Para salvar a mensagem
+		const savedMessage = await this.chatService.sendMessage(data);
 
-		const { conversationId, sender, text } = data;
-		this.logger.log(`Mensagem de ${sender} na conversa ${conversationId}: ${text}`);
+		// Log apenas
+		this.logger.log(`USER_ID : ${data.sender}: ${JSON.stringify(data)}`);
 
-		this.server.to(conversationId).emit('receive_message', {
-			sender,
-			text,
-			conversationId,
-			timestamp: new Date().toISOString(),
-		});
+		// Mandar a mensagem para o socket
+		this.server.emit('received_message', savedMessage);
 	}
 }
