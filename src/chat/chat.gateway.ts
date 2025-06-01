@@ -18,8 +18,11 @@ import { SendMessage } from './chat.service';
 		origin: '*',
 	},
 })
+
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
-	constructor(private readonly chatService: ChatService) {}
+	constructor(
+		// private readonly chatService: ChatService,
+	) {}
 
 	private logger = new Logger('ChatGateway');
 
@@ -52,12 +55,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	async handleSendMessage(@MessageBody() data: SendMessage, @ConnectedSocket() client: Socket) {
 		
 		// Para salvar a mensagem
-		const savedMessage = await this.chatService.sendMessage(data);
+		// const savedMessage = await this.chatService.sendMessage(data);
 
 		// Log apenas
 		this.logger.log(`USER_ID : ${data.sender}: ${JSON.stringify(data)}`);
 
 		// Mandar a mensagem para o socket
-		this.server.emit('received_message', savedMessage);
+		// this.server.emit('received_message', savedMessage);
 	}
 }

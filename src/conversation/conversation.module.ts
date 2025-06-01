@@ -4,6 +4,7 @@ import { ConversationService } from './conversation.service';
 import { Conversation, ConversationSchema } from './schemas/conversation.schema';
 import { ConversationController } from './conversation.controller';
 import { MessagesModule } from '../messages/messages.module';
+import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
 	imports: [

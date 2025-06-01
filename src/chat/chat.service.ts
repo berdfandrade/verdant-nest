@@ -17,26 +17,27 @@ export interface RemoveChatConnection {
 }
 
 export interface EnterTheConversation {
-	myProfileId, targetUserId : Types.ObjectId
+	myProfileId;
+	targetUserId: Types.ObjectId;
 }
 
 export interface MessageResponse {
-	delivered : boolean;
-	sentAt : Date
+	delivered: boolean;
+	sentAt: Date;
 }
 
 export interface SendMessage {
-	sender : Types.ObjectId
-	conversationId : Types.ObjectId
-	content : string
-	sentAt : Date
+	sender: Types.ObjectId;
+	conversationId: Types.ObjectId;
+	content: string;
+	sentAt: Date;
 }
 
 @Injectable()
 export class ChatService {
 	constructor(
 		private readonly conversationService: ConversationService,
-		private readonly messageService : MessagesService,
+		private readonly messageService: MessagesService,
 		private readonly redisService: RedisService,
 	) {}
 
@@ -51,34 +52,43 @@ export class ChatService {
 	*/
 
 	// ? Calma aí que agora eu vou ter que criar um controller de messages
-	async sendMessage({ sender, conversationId, content, sentAt} : SendMessage) : Promise<MessageResponse> {
-
+	async sendMessage({
+		sender,
+		conversationId,
+		content,
+		sentAt,
+	}: SendMessage): Promise<MessageResponse> {
 		// 1. Verifica se a conversa existe
-		const conversation = await this.conversationService.findById(conversationId)
+		const conversation = await this.conversationService.findById(conversationId);
 
-		// 2. Caso a conversa não exista 
-		if(!conversation) throw new NotFoundException('Conversation not found')
-		
+		// 2. Caso a conversa não exista
+		if (!conversation) throw new NotFoundException('Conversation not found');
+
 		// 3. Verifica se o usuário é participante
-		const isParticipant = conversation.participants.some(p => p.equals(sender))
+		const isParticipant = conversation.participants.some(p => p.equals(sender));
 
 		// 4. Caso sender não esteja na conversa
-		if(!isParticipant) throw new ForbiddenException('User not in conversation')
-		
+		if (!isParticipant) throw new ForbiddenException('User not in conversation');
+
 		// 5. Cria a mensagem
-		const newMessage = { sender, conversationId, content, sentAt : new Date()}
+		const newMessage = { sender, conversationId, content, sentAt: new Date() };
 
 		// 6. Ao invés de salvar diretamente no conversations...
-		await this.messageService.create(newMessage)
-		
-		// Retorna o objeto dizendo que a mensagem foi entregue 
-		return { delivered : true, sentAt : newMessage.sentAt }
+		await this.messageService.create(newMessage);
+
+		// Retorna o objeto dizendo que a mensagem foi entregue
+		return { delivered: true, sentAt: newMessage.sentAt };
 	}
 
-	async enterTheConversation({ myProfileId, targetUserId } : EnterTheConversation) {
-		const conversation = await this.conversationService.findBetweenUsers(myProfileId, targetUserId);
+	async enterTheConversation({ myProfileId, targetUserId }: EnterTheConversation) {
+		const conversation = await this.conversationService.findBetweenUsers(
+			myProfileId,
+			targetUserId,
+		);
 
-		if (!conversation) { return { userAllowed: false } }
+		if (!conversation) {
+			return { userAllowed: false };
+		}
 
 		return { userAllowed: true, conversationId: conversation.id };
 	}
@@ -106,7 +116,10 @@ export class ChatService {
 		const connKey = `connection:${socketId}`;
 		const convKey = `conversation:${conversationId}`;
 
-		await this.redisService.setKey(connKey, JSON.stringify({ socketId, userId, conversationId }));
+		await this.redisService.setKey(
+			connKey,
+			JSON.stringify({ socketId, userId, conversationId }),
+		);
 		await this.redisService.addToSet(convKey, socketId);
 	}
 
@@ -122,6 +135,4 @@ export class ChatService {
 			await this.redisService.deleteKey(convKey);
 		}
 	}
-
-	
 }

@@ -12,6 +12,6 @@ import { MessagesController } from './messages.controller';
 	],
 	controllers: [MessagesController],
 	providers: [MessagesService],
-	exports: [MessagesService, MongooseModule], // <- necessário
+	exports: [MessagesService, MongooseModule],
 })
 export class MessagesModule {}

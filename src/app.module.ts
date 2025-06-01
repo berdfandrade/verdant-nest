@@ -12,19 +12,21 @@ import { RedisModule } from './redis/redis.module';
 import { ChatModule } from './chat/chat.module';
 import { StaticFilesConfig } from './config/staticfiles.config';
 import { MessagesModule } from './messages/messages.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
 	imports: [
 		ConfigModule.forRoot({ isGlobal: true }),
 		ServeStaticModule.forRoot(StaticFilesConfig),
+		forwardRef(() => ChatModule),
 		UserModule,
 		ConversationModule,
 		DatabaseModule,
 		ChatGateway,
 		LikesModule,
-		ChatModule,
+
 		RedisModule,
-		MessagesModule
+		MessagesModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
