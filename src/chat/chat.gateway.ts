@@ -1,28 +1,20 @@
+import { Logger, UseGuards } from '@nestjs/common';
+import { Server, Socket } from 'socket.io';
+import { ChatService } from './chat.service';
+import { SendMessage } from './chat.service';
+import { GatewayConfig, GatewayCors } from './config/webSocketGateway.config';
 import {
 	WebSocketGateway,
 	WebSocketServer,
 	SubscribeMessage,
-	OnGatewayInit,
-	OnGatewayConnection,
-	OnGatewayDisconnect,
 	MessageBody,
 	ConnectedSocket,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
-import { ChatService } from './chat.service';
-import { SendMessage } from './chat.service';
 
-@WebSocketGateway({
-	cors: {
-		origin: '*',
-	},
-})
 
-export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
-	constructor(
-		private readonly chatService: ChatService,
-	) {}
+@WebSocketGateway(GatewayCors)
+export class ChatGateway implements GatewayConfig {
+	constructor(private readonly chatService: ChatService) {}
 
 	private logger = new Logger('ChatGateway');
 
@@ -32,15 +24,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	afterInit(server: Server) {
 		this.logger.log('WebSocket Server iniciado');
 	}
-
 	handleConnection(client: Socket) {
 		this.logger.log(`Cliente conectado: ${client.id}`);
 	}
-
 	handleDisconnect(client: Socket) {
 		this.logger.log(`Cliente desconectado: ${client.id}`);
 	}
-
+ 
 	@SubscribeMessage('join_conversation')
 	handleJoinConversation(
 		@MessageBody() data: { conversationId: string },
@@ -53,14 +43,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 	@SubscribeMessage('send_message')
 	async handleSendMessage(@MessageBody() data: SendMessage, @ConnectedSocket() client: Socket) {
-		
-		// Para salvar a mensagem
-		const savedMessage = await this.chatService.sendMessage(data);
-
-		// Log apenas
-		this.logger.log(`USER_ID : ${data.sender}: ${JSON.stringify(data)}`);
-
-		// Mandar a mensagem para o socket
-		// this.server.emit('received_message', savedMessage);
+		try {
+			const savedMessage = await this.chatService.sendMessage(data);
+			this.logger.log(`USER_ID : ${data.sender}: ${JSON.stringify(data)}`);
+			const conversationId = data.conversationId.toHexString();
+			this.server.to(conversationId).emit('received_message', savedMessage);
+		} catch (error) {
+			this.logger.error('Erro ao enviar mensagem', error);
+			client.emit('error', { message: 'Error ao enviar mensagem', content: data.content });
+		}
 	}
 }

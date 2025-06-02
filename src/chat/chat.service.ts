@@ -17,7 +17,7 @@ export interface RemoveChatConnection {
 }
 
 export interface EnterTheConversation {
-	myProfileId;
+	myProfileId : Types.ObjectId;
 	targetUserId: Types.ObjectId;
 }
 
@@ -56,8 +56,8 @@ export class ChatService {
 		sender,
 		conversationId,
 		content,
-		sentAt,
 	}: SendMessage): Promise<MessageResponse> {
+
 		// 1. Verifica se a conversa existe
 		const conversation = await this.conversationService.findById(conversationId);
 
@@ -78,6 +78,25 @@ export class ChatService {
 
 		// Retorna o objeto dizendo que a mensagem foi entregue
 		return { delivered: true, sentAt: newMessage.sentAt };
+	}
+
+	async chatHistory(conversationId: Types.ObjectId) {
+
+		// Primeiro buscamos a mensagem
+		const conversation = await this.conversationService.findById(conversationId);
+
+		// Caso a conversa não exista
+		if (!conversation) throw new NotFoundException('Conversation not found');
+
+		// Popular as mensagens
+		await conversation.populate({
+			path: 'messages',
+			options: { sort: { createdAt: 1 } },
+			populate: { path: 'sender' },
+		});
+
+		// Retorna as mensagens da conversa
+		return conversation.messages
 	}
 
 	async enterTheConversation({ myProfileId, targetUserId }: EnterTheConversation) {
