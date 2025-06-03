@@ -42,6 +42,7 @@ beforeAll(async () => {
 beforeEach(async () => {
 	await messageModel.deleteMany({});
 	await conversationModel.deleteMany({});
+	await userModel.deleteMany({});
 });
 
 afterAll(async () => {
@@ -90,9 +91,81 @@ describe('📩 MessageService', () => {
 		expect(conversationAfterMessage.messages.length).toBe(2);
 
 		// Verifica se os IDs das mensagens estão corretamente associados
-		const messageIds = conversationAfterMessage.messages.map((msg: any) => msg._id.toString());
+		const messageIds = conversationAfterMessage.messages.map((msg: any) =>
+			msg._id.toString(),
+		);
 
 		expect(messageIds).toContain(sentMessage1.id);
 		expect(messageIds).toContain(sentMessage2.id);
+	});
+
+	it('Should modify a message', async () => {
+		const userDto: CreateUserDto = mockUser;
+		const userDto2: CreateUserDto = mockUserMaria;
+
+		const user1 = await userService.create(userDto);
+		const user2 = await userService.create(userDto2);
+
+		const mockConversation: CreateConversationDto = {
+			participants: [user1.id, user2.id],
+		};
+
+		const conversation = await conversationService.create(mockConversation);
+
+		const message1 = {
+			sender: user1.id,
+			conversationId: conversation.id,
+			content: 'Olá, tudo bem',
+			sentAt: new Date(),
+		};
+
+		const sentMessage1 = await messagesService.create(message1);
+
+		const modifiedMessage = {
+			messageId: sentMessage1.id,
+			sender: user1.id,
+			conversationId: conversation.id,
+			content: 'Mensagem modificada',
+		};
+
+		const modifyMessage = await messagesService.modifyMessage(modifiedMessage);
+
+		expect(modifyMessage.content).toBe(modifiedMessage.content);
+	});
+
+	it('Should find a message', async () => {
+		const userDto: CreateUserDto = mockUser;
+		const userDto2: CreateUserDto = mockUserMaria;
+
+		const user1 = await userService.create(userDto);
+		const user2 = await userService.create(userDto2);
+
+		const mockConversation: CreateConversationDto = {
+			participants: [user1.id, user2.id],
+		};
+
+		const conversation = await conversationService.create(mockConversation);
+
+		const message1 = {
+			sender: user1.id,
+			conversationId: conversation.id,
+			content: 'Olá, tudo bem',
+			sentAt: new Date(),
+		};
+
+		const message2 = {
+			sender: user2.id,
+			conversationId: conversation.id,
+			content: 'Tudo e você?',
+			sentAt: new Date(),
+		};
+
+		await messagesService.create(message1);
+		await messagesService.create(message2);
+
+		const searchMessage = await messagesService.searchMessage('Olá');
+
+		expect(searchMessage[0].content).toBe(message1.content);
+		expect(searchMessage[0].sender).toBe(message1.sender);
 	});
 });

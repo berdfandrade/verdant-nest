@@ -15,7 +15,7 @@ export interface LikeProfile {
 }
 
 export interface UnlikeProfile {
-	myProfileId;
+	myProfileId: Types.ObjectId;
 	profileToBeLikedId: Types.ObjectId;
 }
 

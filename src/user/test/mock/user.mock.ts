@@ -12,7 +12,7 @@ export const mockUser: CreateUserDto = {
 	birthDate: new Date('1995-06-15'),
 	location: {
 		type: 'Point',
-		coordinates: [-43.9352, -19.9208], // Exemplo de BH
+		coordinates: [-46.6333, -23.5515], // Exemplo de BH
 	},
 	profession: ['Software Engineer', 'Musician'],
 	showMe: ['women', 'non-binary'],

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common/';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common/';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserModel } from '../user/user.schema';
@@ -22,15 +22,42 @@ export class ProfileService {
 		if (!myProfile.location?.coordinates)
 			throw new NotFoundException('User location not found');
 
-		const distanceInKm = parseFloat(myProfile.preferences?.distance || '10');
-		const maxDistance = distanceInKm * 1000;
+		const [longitude, latitude] = myProfile.location.coordinates;
 
-		const nearbyUsers = await this.userModel.showNearbyUsers(myProfile, maxDistance);
+		if (typeof longitude !== 'number' || typeof latitude !== 'number') {
+			throw new BadRequestException('Invalid user coordinates');
+		}
+
+		const distanceInKm = parseFloat(myProfile.preferences?.distance || '10');
+		const maxDistance = distanceInKm * 1000; // convert to meters
+
+		const nearbyUsers = await this.userModel.aggregate([
+			{
+				$geoNear: {
+					near: {
+						type: 'Point',
+						coordinates: [longitude, latitude],
+					},
+					distanceField: 'distance',
+					spherical: true,
+					maxDistance: maxDistance,
+				},
+			},
+			{
+				$match: {
+					_id: { $ne: myProfile._id },
+					active: true,
+				},
+			},
+			{
+				$limit: 50,
+			},
+		]);
 
 		return nearbyUsers;
 	}
 
-	async showMeMyConfigs(myProfileId: Types.ObjectId) {
+	async showMeMyPreferences(myProfileId: Types.ObjectId) {
 		const myProfile = await this.userModel.findById(myProfileId);
 		if (!myProfile) throw new NotFoundException('Profile not found');
 		return myProfile.preferences;
