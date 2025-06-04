@@ -11,8 +11,9 @@ import {
 	ConnectedSocket,
 } from '@nestjs/websockets';
 
-
-@WebSocketGateway(GatewayCors)
+@WebSocketGateway({
+	cors: { origin: '*' },
+})
 export class ChatGateway implements GatewayConfig {
 	constructor(private readonly chatService: ChatService) {}
 
@@ -30,7 +31,7 @@ export class ChatGateway implements GatewayConfig {
 	handleDisconnect(client: Socket) {
 		this.logger.log(`Cliente desconectado: ${client.id}`);
 	}
- 
+
 	@SubscribeMessage('join_conversation')
 	handleJoinConversation(
 		@MessageBody() data: { conversationId: string },
@@ -44,10 +45,17 @@ export class ChatGateway implements GatewayConfig {
 	@SubscribeMessage('send_message')
 	async handleSendMessage(@MessageBody() data: SendMessage, @ConnectedSocket() client: Socket) {
 		try {
-			const savedMessage = await this.chatService.sendMessage(data);
-			this.logger.log(`USER_ID : ${data.sender}: ${JSON.stringify(data)}`);
-			const conversationId = data.conversationId.toHexString();
-			this.server.to(conversationId).emit('received_message', savedMessage);
+			
+			/*
+				- Tenho que usar a mesma interface do sendMessage aqui
+				- que no frontend, aí da pra controlar a maniupulação dos dois lados
+				
+				- Quando eu pego a mensagem aqui, devo salvar a mensagem 
+				- Devo transmitir o typing com o socket...
+			*/
+
+			this.server.emit('received_message', data);
+			this.logger.log(`${JSON.stringify(data)}`);
 		} catch (error) {
 			this.logger.error('Erro ao enviar mensagem', error);
 			client.emit('error', { message: 'Error ao enviar mensagem', content: data.content });
