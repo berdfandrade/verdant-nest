@@ -39,7 +39,7 @@ export class ChatGateway implements GatewayConfig {
 	) {
 		client.join(data.conversationId);
 		this.logger.log(`Cliente ${client.id} entrou na conversa ${data.conversationId}`);
-		client.emit('joined_conversation', { conversationId: data.conversationId });
+		client.emit('joined_conversation', { conversationId: data.conversationId });	
 	}
 
 	@SubscribeMessage('send_message')
@@ -52,6 +52,8 @@ export class ChatGateway implements GatewayConfig {
 				
 				- Quando eu pego a mensagem aqui, devo salvar a mensagem 
 				- Devo transmitir o typing com o socket...
+
+				- Esse sendmessage é como se fosse um acordo entre os dois....
 			*/
 
 			this.server.emit('received_message', data);

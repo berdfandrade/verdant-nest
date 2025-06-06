@@ -12,6 +12,7 @@ import { ChatModule } from './chat/chat.module';
 import { StaticFilesConfig } from './config/staticfiles.config';
 import { MessagesModule } from './messages/messages.module';
 import { forwardRef } from '@nestjs/common';
+import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { ProfileModule } from './profile/profile.module';
 		ServeStaticModule.forRoot(StaticFilesConfig),
 		forwardRef(() => ChatModule),
 		UserModule,
+		AuthModule,
 		ProfileModule,
 		ConversationModule,
 		DatabaseModule,

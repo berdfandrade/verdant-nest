@@ -18,6 +18,7 @@ import { JwtConfig } from '../config/jwt.config';
 		CryptModule,
 	],
 	providers: [AuthService, JwtStrategy, JwtAuthGuard, CryptService],
+	controllers : [AuthController],
 	exports: [AuthService],
 })
 export class AuthModule {}

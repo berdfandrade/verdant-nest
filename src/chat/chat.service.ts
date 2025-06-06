@@ -30,7 +30,6 @@ export interface SendMessage {
 	sender: Types.ObjectId;
 	conversationId: Types.ObjectId;
 	content: string;
-	sentAt: Date;
 }
 
 @Injectable()
