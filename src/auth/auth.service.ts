@@ -15,10 +15,7 @@ export class AuthService {
 		const user = await this.userService.findByEmail(email);
 		if (!user) throw new UnauthorizedException('Wrong email or password');
 
-		const isPasswordValid = await this.cryptService.comparePasswords(
-			password,
-			user.password,
-		);
+		const isPasswordValid = await this.cryptService.comparePasswords(password, user.password);
 
 		if (!isPasswordValid) throw new UnauthorizedException('Wrong email or password');
 
@@ -34,6 +31,16 @@ export class AuthService {
 			}),
 			user: {
 				id: user._id.toString(),
+				email: user.email,
+			},
+		};
+	}
+
+	async pingAuth(user: any) {
+		return {
+			Message: {
+				id: user._id,
+				name: user.fullName,
 				email: user.email,
 			},
 		};

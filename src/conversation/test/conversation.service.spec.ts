@@ -47,6 +47,7 @@ describe('💬 ConversationService', () => {
 
 			const conversation = await conversationService.create(mockDto);
 			expect(conversation).toBeDefined();
+			console.log(conversation)
 			expect(conversation.participants.length).toBe(2);
 		});
 

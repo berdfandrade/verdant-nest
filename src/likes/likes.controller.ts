@@ -1,4 +1,5 @@
 import { Controller, Post, UseGuards, Body } from '@nestjs/common';
+import { User } from 'src/auth/decorators/user.decorator';
 import { LikesService } from './likes.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { LikeUserDto } from './dto/likes.dto';
@@ -13,6 +14,9 @@ export class LikesController {
 
 	@Post()
 	async likeUser(@Body() data: LikeUserDto) {
+		
+		// Mudaria aqui a lógica apenas do controller... 
+		
 		const myProfile = new mongoose.Types.ObjectId(data.myProfileId);
 		const likedProfile = new mongoose.Types.ObjectId(data.profileToBeLikedId);
 

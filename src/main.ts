@@ -11,6 +11,7 @@ async function bootstrap() {
 
   const PORT = process.env.PORT || 3000;
     setupSwagger(app)
+    app.enableCors()
     configureViews(app)
     validationPipeConfig(app)
 

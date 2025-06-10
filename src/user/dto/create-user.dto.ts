@@ -11,6 +11,7 @@ import {
 	Length,
 	ValidateNested,
 } from 'class-validator';
+import { IsE164 } from '../../validators/is-e164.decorator';
 import { Type } from 'class-transformer';
 import { PreferencesDto } from './preferences.dto';
 import { AboutDto } from './about.dto';
@@ -52,7 +53,7 @@ export class CreateUserDto {
 	@IsNotEmpty()
 	fullName: string;
 
-	@IsPhoneNumber()
+	@IsE164({ message: 'Phone number invalid. Use E164 format (+5511999998888)' })
 	phoneNumber: string;
 
 	@IsDate()

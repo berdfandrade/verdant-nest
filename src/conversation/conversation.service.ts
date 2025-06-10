@@ -53,6 +53,16 @@ export class ConversationService {
 			.exec();
 	}
 
+	// Busca todas as conversas
+	async getAllConversations() {
+		const conversations = await this.conversationModel
+			.find()
+			.populate('participants', 'fullName');
+
+		if (conversations.length === 0) throw new NotFoundException('Conversations not found');
+		return conversations;
+	}
+	
 	// Busca mensagens de uma conversa (pode ser paginado)
 	async getMessages(conversationId: Types.ObjectId, limit = 50, skip = 0): Promise<Message[]> {
 		const conversation = await this.conversationModel
