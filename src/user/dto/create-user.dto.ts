@@ -31,6 +31,9 @@ export class CreateUserDto {
 	@IsBoolean()
 	premium?: boolean;
 
+	@IsString()
+	gender : string;
+
 	@IsOptional()
 	@IsBoolean()
 	active?: boolean;
