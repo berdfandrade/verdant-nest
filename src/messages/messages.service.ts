@@ -13,8 +13,8 @@ export class MessagesService {
 		@InjectModel(Conversation.name) private conversationModel: Model<Conversation>,
 	) {}
 
-	// Cria / Manda uma nova mensagem
-	async create(messageDto: SendMessageDto): Promise<Message> {
+	// Cria | Manda uma nova mensagem
+	async create(messageDto: SendMessageDto): Promise<any> {
 		const conversation = await this.conversationModel.findById(messageDto.conversationId);
 		if (!conversation)
 			throw new NotFoundException('Not able to send a message to an unexisting chat');
@@ -26,6 +26,7 @@ export class MessagesService {
 		conversation.messages.push(savedMessage.id);
 		await conversation.save();
 
+		// Tenho que decidir se retorna a conversa, ou retorna a mensagem 
 		return savedMessage;
 	}
 
