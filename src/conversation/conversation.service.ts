@@ -50,6 +50,8 @@ export class ConversationService {
 				participants: { $all: [id1, id2] },
 				isActive: true,
 			})
+			// Teste
+			.populate('participants', 'fullName photos')
 			.exec();
 	}
 
@@ -57,7 +59,7 @@ export class ConversationService {
 	async getAllConversations() {
 		const conversations = await this.conversationModel
 			.find()
-			.populate('participants', 'fullName');
+			.populate('participants', 'fullName photos');
 
 		if (conversations.length === 0) throw new NotFoundException('Conversations not found');
 		return conversations;
