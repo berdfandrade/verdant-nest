@@ -1,6 +1,7 @@
 import mongoose, { model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 import { ConversationService } from '../conversation.service';
+import { UserService } from '../../user/user.service';
 import { Conversation } from '../schemas/conversation.schema';
 import { Model, Types } from 'mongoose';
 import { MessagesService } from '../../messages/messages.service';
@@ -9,12 +10,15 @@ import { CreateConversationDto } from '../dto/create-conversation.dto';
 import { INestApplication, NotFoundException } from '@nestjs/common';
 import { conversationMock } from './mock/conversation.mock';
 import { SetupTestApp } from '../../../test/test-setup';
+import { CreateUserDto } from '../../user/dto/create-user.dto';
+import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
 
 let app: INestApplication;
 let conversationService: ConversationService;
 let conversationModel: Model<Conversation>;
 let mongoServer: MongoMemoryServer;
 let messagesService: MessagesService;
+let userService: UserService;
 
 beforeAll(async () => {
 	const { app: testApp, moduleFixture, mongoServer: server } = await SetupTestApp();
@@ -23,6 +27,7 @@ beforeAll(async () => {
 	mongoServer = server;
 	conversationService = moduleFixture.get(ConversationService);
 	messagesService = moduleFixture.get(MessagesService);
+	userService = moduleFixture.get(UserService);
 	conversationModel = moduleFixture.get<Model<Conversation>>(getModelToken(Conversation.name));
 });
 
@@ -47,7 +52,7 @@ describe('💬 ConversationService', () => {
 
 			const conversation = await conversationService.create(mockDto);
 			expect(conversation).toBeDefined();
-			console.log(conversation)
+		
 			expect(conversation.participants.length).toBe(2);
 		});
 
@@ -81,22 +86,33 @@ describe('💬 ConversationService', () => {
 
 	describe('🔎 findBetweenUsers', () => {
 		it('should find conversation between two users', async () => {
-			const user1 = conversationMock.participants[0];
-			const user2 = conversationMock.participants[1];
+			const createUser1: CreateUserDto = mockUser;
+			const createUser2: CreateUserDto = mockUserMaria;
 
-			const dto: CreateConversationDto = {
-				participants: [user1, user2],
+			await userService.create(createUser1);
+			await userService.create(createUser2);
+
+			const user1 = await userService.findByEmail(createUser1.email);
+			const user2 = await userService.findByEmail(createUser2.email);
+
+			const conversationDto = {
+				participants: [user1.id, user2.id],
 				messages: [],
+				startedAt: new Date('2025-05-01T09:58:00Z'),
 				isActive: true,
+				archivedAt: undefined,
 			};
 
-			await conversationService.create(dto);
+			await conversationService.create(conversationDto);
 
-			const found = await conversationService.findBetweenUsers(user1, user2);
-
-			expect(found).toBeDefined();
-
-			expect(found?.participants).toEqual(expect.arrayContaining([user1, user2]));
+			// TODO #Bernardo : Gambiarra aqui
+			const found = await conversationService.findBetweenUsers(user1.id, user2.id);
+			const participantIds = found?.participants.map(
+				(p: any) => p._id?.toString?.() || p.toString?.(),
+			);
+			expect(participantIds).toEqual(
+				expect.arrayContaining([user1.id.toString(), user2.id.toString()]),
+			);
 		});
 
 		it('should return null if no conversation exists between the users', async () => {
@@ -131,39 +147,34 @@ describe('💬 ConversationService', () => {
 
 			const participants = [participant1, participant2];
 
-			// Cria a conversa sem mensagens inicialmente
-			const dto: CreateConversationDto = {
-				participants,
-			};
-
+			const dto: CreateConversationDto = { participants };
 			const conversation = await conversationService.create(dto);
 
-			// Cria mensagens associadas a essa conversa
+			// Define timestamps distintos
+			const earlier = new Date('2025-06-25T14:00:00Z');
+			const later = new Date('2025-06-25T15:00:00Z');
+
 			const message1 = {
 				sender: participant1,
 				conversationId: conversation.id,
-				content: 'Hey!',
-				sentAt: new Date(),
+				content: 'Hey!', // mais antiga
+				sentAt: earlier,
 			};
 
 			const message2 = {
 				sender: participant2,
 				conversationId: conversation.id,
-				content: 'Hello!',
-				sentAt: new Date(),
+				content: 'Hello!', // mais recente
+				sentAt: later,
 			};
 
 			await messagesService.create(message1);
 			await messagesService.create(message2);
 
-			// Agora sim, pega as mensagens pela função
 			const result = await conversationService.getMessages(conversation.id);
 
 			expect(result.length).toBe(2);
-			// Como o getMessages ordena por sentAt DESC e não faz reverse,
-			// a mensagem mais recente vem primeiro
-			expect(result[0].content).toBe('Hey!');
-			expect(result[1].content).toBe('Hello!');
+			expect(result.map(m => m.content)).toEqual(['Hello!', 'Hey!']); // DESC
 		});
 
 		it('should throw if conversation not found', async () => {
