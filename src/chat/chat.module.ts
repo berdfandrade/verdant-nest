@@ -6,6 +6,7 @@ import { RedisModule } from '../redis/redis.module';
 import { MessagesModule } from '../messages/messages.module';
 import { ChatGateway } from './chat.gateway';
 
+
 @Module({
 	imports: [ConversationModule, RedisModule, MessagesModule],
 	controllers: [ChatController],
