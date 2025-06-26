@@ -4,6 +4,8 @@ import { ConversationService } from '../conversation/conversation.service';
 import { RedisService } from '../redis/redis.service';
 import { Message, MessageDocument } from '../messages/message.schema';
 import { MessagesService } from '../messages/messages.service';
+import { Socket } from 'socket.io';
+import { JwtService } from '@nestjs/jwt';
 
 export interface ChatConnection {
 	socketId: string;
@@ -17,7 +19,7 @@ export interface RemoveChatConnection {
 }
 
 export interface EnterTheConversation {
-	myProfileId : Types.ObjectId;
+	myProfileId: Types.ObjectId;
 	targetUserId: Types.ObjectId;
 }
 
@@ -40,47 +42,20 @@ export class ChatService {
 		private readonly redisService: RedisService,
 	) {}
 
-	/*
-		Mandar mensagem naquela conversa específica:
-			- Primeiro precisa ter a conversa que vai ser mandanda a mensagem (conversationId)
-			- Precisamos achar a conversa e garantir que o usuário pode mandar mensagem naquela conversa
-			- Depois que garantimos que aquela conversa existe e que o usuário pode mandar mensagem naquela conversa
-			- Criamos um socket para aquela conversa.
-			- Depois que o socket foi criado (sala), o usuário poderá mandar mensagens naquela conversa
-			- A mensagem é 
-	*/
-
-	// ? Calma aí que agora eu vou ter que criar um controller de messages
-	async sendMessage({
-		sender,
-		conversationId,
-		content,
-	}: SendMessage): Promise<MessageResponse> {
-
-		// 1. Verifica se a conversa existe
+	async sendMessage({ sender, conversationId, content }: SendMessage): Promise<MessageResponse> {
 		const conversation = await this.conversationService.findById(conversationId);
-
-		// 2. Caso a conversa não exista
 		if (!conversation) throw new NotFoundException('Conversation not found');
 
-		// 3. Verifica se o usuário é participante
 		const isParticipant = conversation.participants.some(p => p.equals(sender));
-
-		// 4. Caso sender não esteja na conversa
 		if (!isParticipant) throw new ForbiddenException('User not in conversation');
 
-		// 5. Cria a mensagem
 		const newMessage = { sender, conversationId, content, sentAt: new Date() };
-
-		// 6. Ao invés de salvar diretamente no conversations...
 		await this.messageService.create(newMessage);
 
-		// Retorna o objeto dizendo que a mensagem foi entregue
 		return { delivered: true, sentAt: newMessage.sentAt };
 	}
 
 	async chatHistory(conversationId: Types.ObjectId) {
-
 		// Primeiro buscamos a mensagem
 		const conversation = await this.conversationService.findById(conversationId);
 
@@ -95,22 +70,12 @@ export class ChatService {
 		});
 
 		// Retorna as mensagens da conversa
-		return conversation.messages
+		return conversation.messages;
 	}
 
-	async enterTheConversation({ myProfileId, targetUserId }: EnterTheConversation) {
-		const conversation = await this.conversationService.findBetweenUsers(
-			myProfileId,
-			targetUserId,
-		);
-
-		if (!conversation) {
-			return { userAllowed: false };
-		}
-
-		return { userAllowed: true, conversationId: conversation.id };
-	}
-
+	/**
+	 * @deprecated Use `newFunction()` instead.
+	*/
 	async createRoom(conversationId: Types.ObjectId) {
 		const conversation = await this.conversationService.findById(conversationId);
 
@@ -119,14 +84,17 @@ export class ChatService {
 		return { created: true, conversationId };
 	}
 
-	async testRedisConnection(): Promise<string> {
+
+
+	async userIsAllowed(myProfileId: Types.ObjectId, conversationId: Types.ObjectId) {
 		try {
-			await this.redisService.setKey('test:key', 'Hello from Redis!');
-			const value = await this.redisService.getKey('test:key');
-			return `Redis says: ${value}`;
+			const conversation = await this.conversationService.findById(conversationId);
+			if (!conversation) throw new NotFoundException('Conversation not found');
+			const isParticipant = conversation.participants.some(p => p.equals(myProfileId));
+			if (!isParticipant) throw new NotFoundException('User not in this conversation');
+			return true;
 		} catch (error) {
-			console.error('Redis connection error:', error);
-			return 'Failed to connect to Redis';
+			console.error('Error on autheticate user', error);
 		}
 	}
 
@@ -139,6 +107,17 @@ export class ChatService {
 			JSON.stringify({ socketId, userId, conversationId }),
 		);
 		await this.redisService.addToSet(convKey, socketId);
+	}
+
+	async testRedisConnection(): Promise<string> {
+		try {
+			await this.redisService.setKey('test:key', 'Hello from Redis!');
+			const value = await this.redisService.getKey('test:key');
+			return `Redis says: ${value}`;
+		} catch (error) {
+			console.error('Redis connection error:', error);
+			return 'Failed to connect to Redis';
+		}
 	}
 
 	async removeConnection({ socketId, conversationId }: RemoveChatConnection) {

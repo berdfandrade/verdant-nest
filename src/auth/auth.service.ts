@@ -36,6 +36,14 @@ export class AuthService {
 		};
 	}
 
+	async verifyToken(token : string) {
+		try {
+			return this.jwtService.verify(token)
+		} catch (error) {
+			throw new UnauthorizedException('Invalid token')
+		}
+	}
+
 	async pingAuth(user: any) {
 		return {
 			Message: {

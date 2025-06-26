@@ -74,11 +74,9 @@ export class ConversationService {
 
 		if (!conversation) throw new NotFoundException('Conversations not found');
 
-		// Busca as mensagens da conversa, ordenando por data (sentAt) ascendente ou descendente
-		// Se quiser as mais recentes primeiro, ordena por sentAt desc
 		const messages = await this.messageModel
 			.find({ conversationId })
-			.sort({ sentAt: -1 }) // Mensagens mais recentes primeiro
+			.sort({ sentAt: -1 }) 
 			.skip(skip)
 			.limit(limit)
 			.exec();
