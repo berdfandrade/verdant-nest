@@ -33,7 +33,6 @@ export class ConversationController {
 	async findBydId(@Param('id') id: mongoose.Types.ObjectId, @Request() req: any) {
 		const conversation = await this.conversationService.findById(id);
 
-		// Verifica se o usuário faz parte da conversa
 		const userId = req.user.id;
 		const isParticipant = conversation.participants.includes(userId);
 

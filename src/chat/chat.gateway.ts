@@ -1,4 +1,4 @@
-import { Logger, NotFoundException, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { SendMessage } from './chat.service';
@@ -15,7 +15,6 @@ import {
 import { ConversationService } from 'src/conversation/conversation.service';
 import { MessagesService } from 'src/messages/messages.service';
 import { Types } from 'mongoose';
-import { User } from 'src/auth/decorators/user.decorator';
 import { AuthService } from 'src/auth/auth.service';
 import { RedisService } from 'src/redis/redis.service';
 
@@ -53,7 +52,6 @@ export class ChatGateway implements GatewayConfig {
 			}
 
 			await this.redisService.setKey(`online:${userId}`, client.id);
-			// this.redisService.setKey(userId, client.id);
 			this.logger.log(`User id ${userId}, in socket (${client.id})`);
 		} catch (error) {
 			this.logger.log(`Erro on stablish connection`, error);
