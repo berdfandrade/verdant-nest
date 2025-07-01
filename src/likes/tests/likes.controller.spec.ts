@@ -1,23 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../../app.module';
-import mongoose from 'mongoose';
 import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
 import { Model } from 'mongoose';
-import { User, UserSchema } from '../../user/user.schema';
-import { getModelToken, MongooseModule } from '@nestjs/mongoose';
+import mongoose from 'mongoose';
+import { User, } from '../../user/user.schema';
+import { getModelToken} from '@nestjs/mongoose';
 import {  LikesService } from '../likes.service';
-import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../../user/user.service';
-import { AuthModule } from '../../auth/auth.module';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { AuthService } from '../../auth/auth.service';
 import { AuthDto } from '../../auth/dto/auth.dto';
+import { SetupTestApp } from '../../../test/test-setup';
 
 let app: INestApplication;
-let mongoServer: MongoMemoryServer;
-let jwtService: JwtService;
+let mongoServer : MongoMemoryServer
 let likesService: LikesService;
 let userService: UserService;
 let userModel: Model<User>;
@@ -29,23 +25,11 @@ const CREDENTIALS : AuthDto = {
 }
 
 beforeAll(async () => {
-	mongoServer = await MongoMemoryServer.create();
-	const mongoUri = mongoServer.getUri();
+	const {app : testApp, moduleFixture, mongoServer : server} = await SetupTestApp()
 
-	const moduleFixture: TestingModule = await Test.createTestingModule({
-		imports: [
-			MongooseModule.forRoot(mongoUri),
-			MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-			AppModule,
-			AuthModule,
-		],
-	}).compile();
-
-	app = moduleFixture.createNestApplication();
-	app.useGlobalPipes(new ValidationPipe());
-	await app.init();
-
-	jwtService = moduleFixture.get<JwtService>(JwtService);
+	app = testApp
+	mongoServer = server; 
+	// jwtService = moduleFixture.get<JwtService>(JwtService);
 	userService = moduleFixture.get<UserService>(UserService);
 	userModel = moduleFixture.get(getModelToken(User.name));
 	likesService = moduleFixture.get<LikesService>(LikesService);
