@@ -17,6 +17,9 @@ export class User extends Document {
 	@Prop({ default: false })
 	verified: boolean;
 
+	@Prop({ type: String, default: null })
+	refreshToken?: string | null;
+
 	@Prop()
 	username: string;
 

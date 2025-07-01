@@ -26,7 +26,7 @@ beforeAll(async () => {
 	profileService = moduleFixture.get(ProfileService);
 	userService = moduleFixture.get(UserService);
 	userModel = moduleFixture.get<Model<User>>(getModelToken(User.name));
-	await userModel.ensureIndexes(); // força a criação dos índices antes dos testes
+	// await userModel.ensureIndexes(); // força a criação dos índices antes dos testes
 });
 
 beforeEach(async () => {

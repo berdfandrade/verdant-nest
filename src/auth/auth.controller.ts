@@ -1,5 +1,4 @@
-import { Controller, Post, Body, HttpCode, Get, UseGuards, Req} from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Body, Post, HttpCode, Get, UseGuards, Req } from '@nestjs/common';
 import { User } from './decorators/user.decorator';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';
@@ -14,14 +13,17 @@ export class AuthController {
 	@Post()
 	@HttpCode(200)
 	async login(@Body() authDto: AuthDto) {
-		const user = await this.authService.validateUser(authDto.email, authDto.password);
-		return this.authService.login(user);
+		return this.authService.validateAndLogin(authDto)
 	}
 
 	@Get('auth_ping')
 	@UseGuards(JwtAuthGuard)
-	async pingAuth(@User() user : any) {
-		return this.authService.pingAuth(user)
+	async pingAuth(@User() user: any) {
+		return this.authService.pingAuth(user);
 	}
 
+	// @Post('refresh')
+	// async refreshToken(@Body() body : {refresh_token : string}) {
+	// 	return this.authService.refreshToken(body.refresh_token)
+	// }
 }

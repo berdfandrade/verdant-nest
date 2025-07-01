@@ -12,6 +12,8 @@ import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../../user/user.service';
 import { AuthModule } from '../../auth/auth.module';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { AuthService } from '../../auth/auth.service';
+import { AuthDto } from '../../auth/dto/auth.dto';
 
 let app: INestApplication;
 let mongoServer: MongoMemoryServer;
@@ -19,6 +21,12 @@ let jwtService: JwtService;
 let likesService: LikesService;
 let userService: UserService;
 let userModel: Model<User>;
+let authService : AuthService
+
+const CREDENTIALS : AuthDto = {
+	email : 'bernardo@example.com',
+	password : 'securePass123'
+}
 
 beforeAll(async () => {
 	mongoServer = await MongoMemoryServer.create();
@@ -41,6 +49,9 @@ beforeAll(async () => {
 	userService = moduleFixture.get<UserService>(UserService);
 	userModel = moduleFixture.get(getModelToken(User.name));
 	likesService = moduleFixture.get<LikesService>(LikesService);
+	authService = moduleFixture.get<AuthService>(AuthService)
+
+
 });
 
 beforeEach(async () => {
@@ -55,12 +66,11 @@ afterAll(async () => {
 
 describe('❤️  LikesController (e2e)', () => {
 	it('Should return 200 if the user liked other user', async () => {
-		const dto = mockUser;
-		const dto2 = mockUserMaria;
 
-		const user = await userService.create(dto);
-		const user2 = await userService.create(dto2);
-		const token = jwtService.sign({ sub: user.id });
+		const user = await userService.create(mockUser);
+		const loginResponse = await authService.validateAndLogin(CREDENTIALS)
+		const token = loginResponse.access_token
+		const user2 = await userService.create(mockUserMaria);
 
 		const response = await request(app.getHttpServer())
 			.post('/likes')
@@ -76,9 +86,13 @@ describe('❤️  LikesController (e2e)', () => {
 	});
 
 	it('Should return alreadyLiked if like was sent again', async () => {
+
 		const user = await userService.create(mockUser);
 		const user2 = await userService.create(mockUserMaria);
-		const token = jwtService.sign({ sub: user.id });
+		
+		const loginResponse = await authService.validateAndLogin(CREDENTIALS)
+		const token = loginResponse.access_token
+		
 
 		await likesService.likeProfile({
 			myProfileId: user.id,
@@ -100,8 +114,9 @@ describe('❤️  LikesController (e2e)', () => {
 
 	it('Should create a match when both users like each other', async () => {
 		const userA = await userService.create(mockUser);
+		const loginResponse = await authService.validateAndLogin(CREDENTIALS)
+		const token = loginResponse.access_token
 		const userB = await userService.create(mockUserMaria);
-		const token = jwtService.sign({ sub: userB.id });
 
 		// A dá like em B primeiro
 		await likesService.likeProfile({
@@ -125,9 +140,10 @@ describe('❤️  LikesController (e2e)', () => {
 
 	it('Should unlike a user successfully', async () => {
 		const user = await userService.create(mockUser);
+		const loginResponse = await authService.validateAndLogin(CREDENTIALS)
+		const token = loginResponse.access_token
 		const user2 = await userService.create(mockUserMaria);
-		const token = jwtService.sign({ sub: user.id });
-
+		
 		await likesService.likeProfile({
 			myProfileId: user.id,
 			profileToBeLikedId: user2.id,
@@ -147,7 +163,9 @@ describe('❤️  LikesController (e2e)', () => {
 
 	it('Should return 404 if user does not exist', async () => {
 		const user = await userService.create(mockUser);
-		const token = jwtService.sign({ sub: user.id });
+
+		const loginResponse = await authService.validateAndLogin(CREDENTIALS)
+		const token = loginResponse.access_token
 
 		const fakeId = new mongoose.Types.ObjectId().toString();
 

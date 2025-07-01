@@ -3,9 +3,10 @@ import { CreateUserDto } from '../../dto/create-user.dto';
 export const mockUser: CreateUserDto = {
 	premium: true,
 	active: true,
+	refreshToken: '',
 	verified: true,
 	username: 'bernardo_dev',
-	gender : 'Male',
+	gender: 'Male',
 	email: 'bernardo@example.com',
 	password: 'securePass123',
 	fullName: 'Bernardo Silva',
@@ -66,8 +67,9 @@ export const mockUser: CreateUserDto = {
 export const mockUserMaria: CreateUserDto = {
 	premium: false,
 	active: true,
+	refreshToken: '',
 	verified: false,
-	gender : 'Female',
+	gender: 'Female',
 	username: 'maria_artsy',
 	email: 'maria@example.com',
 	password: 'safePassword456',

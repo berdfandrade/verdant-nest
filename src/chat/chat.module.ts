@@ -6,8 +6,7 @@ import { RedisModule } from '../redis/redis.module';
 import { MessagesModule } from '../messages/messages.module';
 import { ChatGateway } from './chat.gateway';
 import { JwtModule } from '@nestjs/jwt';
-import { AuthModule } from 'src/auth/auth.module';
-
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
 	imports: [ConversationModule, RedisModule, MessagesModule, AuthModule, JwtModule],

@@ -39,6 +39,10 @@ export class CreateUserDto {
 	active?: boolean;
 
 	@IsOptional()
+	@IsString() 
+	refreshToken : string; 
+
+	@IsOptional()
 	@IsBoolean()
 	verified?: boolean;
 

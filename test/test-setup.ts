@@ -5,20 +5,27 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppModule } from '../src/app.module';
 
 export async function SetupTestApp() {
-	const mongoServer = await MongoMemoryServer.create();
-	const mongoUri = mongoServer.getUri();
+  let mongoServer;
+  let mongoUri;
 
-	const moduleFixture: TestingModule = await Test.createTestingModule({
-		imports: [MongooseModule.forRoot(mongoUri), AppModule],
-	}).compile();
+  if (process.env.NODE_ENV === 'test') {
+    mongoServer = await MongoMemoryServer.create();
+    mongoUri = mongoServer.getUri();
+  } else {
+    mongoUri = process.env.MONGO_URI;
+  }
 
-	const app = moduleFixture.createNestApplication();
-	app.useGlobalPipes(new ValidationPipe());
-	await app.init();
+  const moduleFixture: TestingModule = await Test.createTestingModule({
+    imports: [MongooseModule.forRoot(mongoUri), AppModule],
+  }).compile();
 
-	return {
-		app,
-		mongoServer,
-		moduleFixture,
-	};
+  const app = moduleFixture.createNestApplication();
+  app.useGlobalPipes(new ValidationPipe());
+  await app.init();
+
+  return {
+    app,
+    mongoServer,
+    moduleFixture,
+  };
 }

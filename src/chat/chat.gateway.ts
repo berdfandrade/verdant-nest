@@ -12,11 +12,11 @@ import {
 	ConnectedSocket,
 } from '@nestjs/websockets';
 
-import { ConversationService } from 'src/conversation/conversation.service';
-import { MessagesService } from 'src/messages/messages.service';
+import { ConversationService } from '../conversation/conversation.service';
+import { MessagesService } from '../messages/messages.service';
 import { Types } from 'mongoose';
-import { AuthService } from 'src/auth/auth.service';
-import { RedisService } from 'src/redis/redis.service';
+import { AuthService } from '../auth/auth.service';
+import { RedisService } from '../redis/redis.service';
 
 @WebSocketGateway({
 	cors: { origin: '*' },

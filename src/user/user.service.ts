@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
+import { Model } from 'mongoose';
 import { User } from './user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -39,6 +39,21 @@ export class UserService {
 
 	async findAll(): Promise<User[]> {
 		return this.userModel.find();
+	}
+
+	async updateRefreshToken(id: Types.ObjectId, refreshToken: string) {
+		const user = await this.userModel.findById(id);
+		if (!user) throw new NotFoundException('User does not exists');
+		await this.userModel.findByIdAndUpdate(id, { refreshToken });
+	}
+
+	async logout(id: Types.ObjectId) {
+		const user = await this.userModel.findById(id);
+		if (!user) throw new NotFoundException('User does not exist');
+		if (user.refreshToken === null) return { message: 'Already logged out' };
+		user.refreshToken = null;
+		await user.save();
+		return { message: 'Logout successful' };
 	}
 
 	async findByEmail(email: string): Promise<User> {

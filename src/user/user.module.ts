@@ -4,6 +4,7 @@ import { UserController } from './user.controller';
 import { UserSchema, User } from './user.schema';
 import { UserService } from './user.service';
 import { CryptModule } from '../security/crypt.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
 	imports: [
