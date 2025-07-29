@@ -5,8 +5,10 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './user.schema';
 import { ApiTags } from '@nestjs/swagger';
 import MongoDbUtils from '../utils/MongoDB.utils';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @ApiTags('👤 Users')
+
 @Controller('users')
 export class UserController {
 	constructor(private readonly userService: UserService) {}

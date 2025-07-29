@@ -19,7 +19,7 @@ import MongoDbUtils from '../utils/MongoDB.utils';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('💬 Conversations')
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller('conversations')
 export class ConversationController {
 	constructor(private readonly conversationService: ConversationService) {}

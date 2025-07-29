@@ -4,6 +4,8 @@ import { CryptService } from '../security/crypt.service';
 import { UserService } from '../user/user.service';
 import { AuthDto } from './dto/auth.dto';
 import { LogExecutionTime } from '../utils/LogExectionTime';
+import { AdminService } from 'src/admin/admin.service';
+import e from 'express';
 
 @Injectable()
 export class AuthService {
@@ -11,11 +13,11 @@ export class AuthService {
 		private userService: UserService,
 		private jwtService: JwtService,
 		private cryptService: CryptService,
+		private adminService : AdminService
 	) {}
 
 	private REFRESH_TOKEN_SECRET = process.env.REFRESH_JWT_SECRET || 'DefaultHashingSecret';
 
-	@LogExecutionTime()
 	async validateAndLogin(authDto: AuthDto) {
 		
 		try {
@@ -44,6 +46,31 @@ export class AuthService {
 		}
 		
 	}
+
+	async adminLogin(authDto : AuthDto) {
+
+	try {
+		const admin = await this.adminService.findByEmail(authDto.email)
+		const isPasswordValid = await this.cryptService.comparePasswords(authDto.password, admin.password);
+		if(!isPasswordValid) throw new UnauthorizedException('Wrong email or password')
+		
+		const payload = {sub : admin.id.toString(), email : admin.email };
+
+		const access_token = this.jwtService.sign(payload, {expiresIn : '1h'})
+
+		return {
+			access_token : access_token,
+			admin : {
+				id : admin.id.toStrin(), 
+				email : admin.email
+			}
+		}
+
+		} catch (error) {
+			throw new UnauthorizedException('Wrong email or passwrod')
+		}
+	}
+	
 	async verifyToken(token: string) {
 		try {
 			return this.jwtService.verify(token);
