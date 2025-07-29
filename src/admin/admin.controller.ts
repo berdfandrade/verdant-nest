@@ -1,9 +1,10 @@
 
-import { Body, Controller, Get, Param, Post, Put, Delete, Query, BadRequestException}from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Delete, Query, BadRequestException, UseGuards}from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { Admin } from './admin.schema';
 import { ApiTags } from '@nestjs/swagger';
+
 
 @ApiTags('👑 Admin')
 @Controller('admin')
@@ -21,5 +22,10 @@ export class AdminController {
         
         return this.adminService.create(createAdminDto)
     }
-    
+
+    @Get()
+    getAdminData() {
+        return { message: 'You are an admin!' };
+  }
+
 }

@@ -41,16 +41,13 @@ export class ConversationService {
 	}
 
 	// Busca conversa entre dois users
-	async findBetweenUsers(
-		id1: Types.ObjectId,
-		id2: Types.ObjectId,
-	): Promise<Conversation | null> {
+	async findBetweenUsers( id1: Types.ObjectId, id2: Types.ObjectId ): Promise<Conversation | null> {
+		
 		return this.conversationModel
 			.findOne({
 				participants: { $all: [id1, id2] },
 				isActive: true,
 			})
-			// Teste
 			.populate('participants', 'fullName photos')
 			.exec();
 	}

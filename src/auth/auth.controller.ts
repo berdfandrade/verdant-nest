@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ApiTags } from '@nestjs/swagger';
+import { AdminOnly } from './decorators/admin-only-decorator';
 
 @ApiTags('🔒 Auth')
 @Controller('login')
@@ -22,8 +23,14 @@ export class AuthController {
 		return this.authService.pingAuth(user);
 	}
 
-	// @Post('refresh')
-	// async refreshToken(@Body() body : {refresh_token : string}) {
-	// 	return this.authService.refreshToken(body.refresh_token)
-	// }
+	@Post('admin')
+	async adminLogin(@Body() authDto : AuthDto) {
+		return this.authService.adminLogin(authDto)
+	}
+
+	@AdminOnly()
+	@Get('hello')
+	async getHello() {
+		return 'Hello from Guard'
+	}
 }

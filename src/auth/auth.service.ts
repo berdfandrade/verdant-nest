@@ -1,15 +1,14 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { CryptService } from '../security/crypt.service';
 import { UserService } from '../user/user.service';
 import { AuthDto } from './dto/auth.dto';
-import { LogExecutionTime } from '../utils/LogExectionTime';
 import { AdminService } from 'src/admin/admin.service';
-import e from 'express';
 
 @Injectable()
 export class AuthService {
 	constructor(
+		@Inject('JWT_ADMIN_SERVICE') private readonly adminJwt : JwtService,
 		private userService: UserService,
 		private jwtService: JwtService,
 		private cryptService: CryptService,
@@ -54,20 +53,21 @@ export class AuthService {
 		const isPasswordValid = await this.cryptService.comparePasswords(authDto.password, admin.password);
 		if(!isPasswordValid) throw new UnauthorizedException('Wrong email or password')
 		
-		const payload = {sub : admin.id.toString(), email : admin.email };
+		const payload = { sub : admin.id.toString(), email : admin.email };
 
-		const access_token = this.jwtService.sign(payload, {expiresIn : '1h'})
+		const access_token = this.adminJwt.sign(payload, { expiresIn: '1h' })
 
 		return {
 			access_token : access_token,
 			admin : {
-				id : admin.id.toStrin(), 
+				id : admin.id.toString(), 
 				email : admin.email
 			}
 		}
 
 		} catch (error) {
-			throw new UnauthorizedException('Wrong email or passwrod')
+			console.log(error)
+			throw new UnauthorizedException('Wrong email or password')
 		}
 	}
 	
@@ -80,6 +80,7 @@ export class AuthService {
 	}
 
 	async createRefreshToken(user: any) {
+		
 		const refreshToken = this.jwtService.sign(
 			{ sub: user.id.toString(), email: user.email },
 			{ expiresIn: '10d', secret: this.REFRESH_TOKEN_SECRET },
