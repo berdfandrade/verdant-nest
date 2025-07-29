@@ -5,7 +5,7 @@ import { CreateAdminDto } from './dto/create-admin.dto';
 import { Admin } from './admin.schema';
 import { ApiTags } from '@nestjs/swagger';
 
-@ApiTags('Admin')
+@ApiTags('👑 Admin')
 @Controller('admin')
 export class AdminController {
     
