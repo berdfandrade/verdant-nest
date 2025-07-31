@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { CryptService } from '../security/crypt.service';
 import { UserService } from '../user/user.service';
 import { AuthDto } from './dto/auth.dto';
-import { AdminService } from 'src/admin/admin.service';
+import { AdminService } from '../admin/admin.service';
 
 @Injectable()
 export class AuthService {

@@ -12,15 +12,14 @@ import {
 	UseGuards,
 	Delete,
 } from '@nestjs/common';
-import { User } from 'src/auth/decorators/user.decorator';
+import { User } from '../auth/decorators/user.decorator';
 import { ConversationService } from './conversation.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import MongoDbUtils from '../utils/MongoDB.utils';
 import { ApiTags } from '@nestjs/swagger';
-import { AdminOnly } from 'src/auth/decorators/admin-only-decorator';
-import { JwtConfig } from 'src/config/jwt.config';
-import { AuthGuard } from '@nestjs/passport';
+import { AdminOnly } from '../auth/decorators/admin-only-decorator';
+
 
 
 @ApiTags('💬 Conversations')

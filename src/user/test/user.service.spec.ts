@@ -12,8 +12,10 @@ import { CryptService } from '../../security/crypt.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { ConflictException } from '@nestjs/common';
 import { AuthService } from '../../auth/auth.service';
-import { JwtService } from '@nestjs/jwt';
+import { JwtStrategy } from '../../auth/jwt.strategy';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { AuthModule } from '../../auth/auth.module';
+
 import { mock } from 'node:test';
 
 let mongoServer: MongoMemoryServer;
@@ -31,7 +33,7 @@ beforeAll(async () => {
 			MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
 			AuthModule,
 		],
-		providers: [UserService, CryptService, AuthService, JwtService],
+		providers: [UserService, CryptService, AuthService, JwtStrategy, JwtAuthGuard, CryptService],
 		controllers: [UserController],
 	}).compile();
 

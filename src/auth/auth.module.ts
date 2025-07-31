@@ -9,7 +9,7 @@ import { PassportModule } from "@nestjs/passport";
 import { CryptService } from "../security/crypt.service";
 import { CryptModule } from "../security/crypt.module";
 import {JwtConfig } from "../config/jwt.config";
-import { AdminModule } from "src/admin/admin.module";
+import { AdminModule } from "../admin/admin.module";
 import { AdminAuthProvider } from "./admin-auth.provider";
 import { AdminJwtGuard } from "./admin-jwt.guard";
 

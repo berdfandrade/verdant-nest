@@ -7,8 +7,6 @@ import {
 } from "./schemas/conversation.schema";
 import { ConversationController } from "./conversation.controller";
 import { MessagesModule } from "../messages/messages.module";
-import { ChatModule } from "src/chat/chat.module";
-import { AuthModule } from "src/auth/auth.module";
 
 @Module({
   imports: [
