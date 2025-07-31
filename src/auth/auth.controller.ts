@@ -2,9 +2,13 @@ import { Controller, Body, Post, HttpCode, Get, UseGuards, Req } from '@nestjs/c
 import { User } from './decorators/user.decorator';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
+
 import { ApiTags } from '@nestjs/swagger';
 import { AdminOnly } from './decorators/admin-only-decorator';
+
+import { SelfOnly } from './decorators/self-only.decorator';
+import { JwtAuthGuard } from './jwt-auth.guard';
+
 
 @ApiTags('🔒 Auth')
 @Controller('login')
@@ -17,8 +21,8 @@ export class AuthController {
 		return this.authService.validateAndLogin(authDto)
 	}
 
-	@Get('auth_ping')
 	@UseGuards(JwtAuthGuard)
+	@Get('auth_ping')
 	async pingAuth(@User() user: any) {
 		return this.authService.pingAuth(user);
 	}

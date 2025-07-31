@@ -12,11 +12,16 @@ import {
 	UseGuards,
 	Delete,
 } from '@nestjs/common';
+import { User } from 'src/auth/decorators/user.decorator';
 import { ConversationService } from './conversation.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import MongoDbUtils from '../utils/MongoDB.utils';
 import { ApiTags } from '@nestjs/swagger';
+import { AdminOnly } from 'src/auth/decorators/admin-only-decorator';
+import { JwtConfig } from 'src/config/jwt.config';
+import { AuthGuard } from '@nestjs/passport';
+
 
 @ApiTags('💬 Conversations')
 // @UseGuards(JwtAuthGuard)
@@ -39,15 +44,25 @@ export class ConversationController {
 		if (!isParticipant) throw new ForbiddenException('Not allowed');
 	}
 
+	@AdminOnly()
 	@Get()
 	async getAllConversations() {
 		return this.conversationService.getAllConversations();
 	}
 
+	@UseGuards(JwtAuthGuard)
 	@Get('/between/users')
-	async findBetweenUsers(@Query('user1') user1: string, @Query('user2') user2: string) {
+	async findBetweenUsers( @User() user: any, @Query('user1') user1: string, @Query('user2') user2: string ) {
+
 		const id1 = MongoDbUtils.toObjectId(user1);
 		const id2 = MongoDbUtils.toObjectId(user2);
+
+		const id1Str = id1.toString();
+		const id2Str = id2.toString();
+
+		if (user.id !== id1Str && user.id !== id2Str) {
+			throw new NotFoundException("Can't access this route");
+		} 
 
 		const conversation = await this.conversationService.findBetweenUsers(id1, id2);
 		if (!conversation) throw new NotFoundException('Conversation not found');
