@@ -15,8 +15,7 @@ import { AuthService } from '../../auth/auth.service';
 import { JwtStrategy } from '../../auth/jwt.strategy';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { AuthModule } from '../../auth/auth.module';
-
-import { mock } from 'node:test';
+import { AdminModule } from '../../admin/admin.module';
 
 let mongoServer: MongoMemoryServer;
 let userService: UserService;
@@ -32,6 +31,7 @@ beforeAll(async () => {
 			MongooseModule.forRoot(mongoUri),
 			MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
 			AuthModule,
+			AdminModule
 		],
 		providers: [UserService, CryptService, AuthService, JwtStrategy, JwtAuthGuard, CryptService],
 		controllers: [UserController],

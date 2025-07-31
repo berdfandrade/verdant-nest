@@ -24,6 +24,6 @@ import { AdminJwtGuard } from "./admin-jwt.guard";
   ],
   providers: [AuthService, JwtStrategy, JwtAuthGuard, CryptService, AdminAuthProvider, AdminJwtGuard],
   controllers: [AuthController],
-  exports: [AuthService, 'JWT_ADMIN_SERVICE'],
+  exports: [AuthService, 'JWT_ADMIN_SERVICE', JwtModule, AdminAuthProvider, AdminJwtGuard],
 })
 export class AuthModule {}
