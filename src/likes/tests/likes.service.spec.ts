@@ -11,7 +11,7 @@ import { LikesModule } from '../likes.module';
 import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
 import { CreateUserDto } from '../../user/dto/create-user.dto';
 import { LikeProfile } from '../likes.service';
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthModule } from '../../auth/auth.module';
 
 let mongoServer: MongoMemoryServer;
 let likesService: LikesService;
