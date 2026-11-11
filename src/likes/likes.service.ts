@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { UserService } from '@/user/user.service';
@@ -77,6 +77,11 @@ export class LikesService {
 
 		if (!myUser || !targetUser) {
 			throw new NotFoundException('User or user to be liked not found');
+		}
+
+		// Bloqueio em qualquer direção impede curtir
+		if (hasId(myUser.blockedUsers ?? [], profileToBeLikedId) || hasId(targetUser.blockedUsers ?? [], myProfileId)) {
+			throw new ForbiddenException('You can not interact with this user');
 		}
 
 		const alreadyLiked = hasId(myUser.likedProfiles, profileToBeLikedId);

@@ -20,6 +20,7 @@ import { AuthModule } from "./auth/auth.module";
 import { ProfileModule } from "./profile/profile.module";
 import { AdminModule } from "./admin/admin.module";
 import { StorageModule } from "./storage/storage.module";
+import { SafetyModule } from "./safety/safety.module";
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { StorageModule } from "./storage/storage.module";
     UserModule,
     AuthModule,
     AdminModule,
+    SafetyModule,
     ProfileModule,
     ConversationModule,
     DatabaseModule,

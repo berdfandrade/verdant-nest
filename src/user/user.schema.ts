@@ -147,6 +147,10 @@ export class User extends Document {
 	@Prop({ type: [Date], default: [] })
 	superLikeHistory: Date[];
 
+	// Usuários que eu bloqueei (some do feed e não podem interagir comigo)
+	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], default: [] })
+	blockedUsers: Types.ObjectId[];
+
 	@Prop({
 		type: {
 			ageRange: [Number],

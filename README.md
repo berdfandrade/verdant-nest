@@ -228,6 +228,19 @@ Todas as rotas usam o usuário do token; o body leva só o perfil alvo: `{ "prof
 | DELETE | `/messages/:id` | 🔑 autor | Remove a mensagem |
 | GET | `/messages/search?conversationId=&q=` | 🔑 participante | Busca texto dentro da conversa |
 
+### Segurança — `/safety`
+
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| POST | `/safety/block/:userId` | 🔑 | Bloqueia o usuário |
+| DELETE | `/safety/block/:userId` | 🔑 | Desbloqueia (não refaz o match nem reabre a conversa) |
+| GET | `/safety/blocked` | 🔑 | Usuários que eu bloqueei |
+| POST | `/safety/report` | 🔑 | Denuncia `{ userId, reason, details?, block? }`. Por padrão também bloqueia |
+
+Motivos de denúncia: `spam`, `fake_profile`, `harassment`, `inappropriate_content`, `underage`, `scam` e `other`.
+
+**Efeitos do bloqueio (nos dois sentidos):** desfaz likes e match, arquiva a conversa, tira os dois do feed um do outro e impede novos likes (403). Denunciar a mesma pessoa de novo, enquanto a denúncia está aberta, atualiza a denúncia existente em vez de criar outra.
+
 ### Admin — `/admin`
 
 | Método | Rota | Acesso | Descrição |
@@ -241,6 +254,8 @@ Todas as rotas usam o usuário do token; o body leva só o perfil alvo: `{ "prof
 | PATCH | `/admin/users/:id/verify` | 👑 | Marca como verificado |
 | PATCH | `/admin/users/:id/premium` | 👑 | Concede ou remove premium `{ premium: true \| false }` |
 | DELETE | `/admin/users/:id` | 👑 | Remove o usuário |
+| GET | `/admin/reports?status=&limit=&skip=` | 👑 | Lista denúncias (`open`, `reviewed`, `dismissed`) com denunciante e denunciado |
+| PATCH | `/admin/reports/:id` | 👑 | Revisa a denúncia `{ status: "reviewed" \| "dismissed" }` |
 
 ### Outros
 
