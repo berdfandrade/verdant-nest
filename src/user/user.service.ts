@@ -5,7 +5,7 @@ import { Model } from 'mongoose';
 import { User } from './user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CryptService } from '../security/crypt.service';
+import { CryptService } from '@/security/crypt.service';
 
 @Injectable()
 export class UserService {

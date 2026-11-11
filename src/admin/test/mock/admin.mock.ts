@@ -1,4 +1,4 @@
-import { CreateAdminDto } from '../../dto/create-admin.dto';
+import { CreateAdminDto } from '@/admin/dto/create-admin.dto';
 
 export const mockAdmin: CreateAdminDto = {
 	name: 'Admin Verdant',

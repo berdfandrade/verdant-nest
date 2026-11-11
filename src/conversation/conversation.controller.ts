@@ -12,13 +12,13 @@ import {
 	DefaultValuePipe,
 	ParseIntPipe,
 } from '@nestjs/common';
-import { User } from '../auth/decorators/user.decorator';
+import { User } from '@/auth/decorators/user.decorator';
 import { ConversationService } from './conversation.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import MongoDbUtils from '../utils/MongoDB.utils';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import MongoDbUtils from '@/utils/MongoDB.utils';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { AdminOnly } from '../auth/decorators/admin-only-decorator';
+import { AdminOnly } from '@/auth/decorators/admin-only-decorator';
 
 @ApiTags('💬 Conversations')
 @ApiBearerAuth()

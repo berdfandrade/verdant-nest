@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ProfileService } from './profile.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { User } from '../auth/decorators/user.decorator';
-import { UpdatePreferencesDto } from '../user/dto/update-preferences.dto';
-import { UpdateAboutDto } from '../user/dto/update-about.dto';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { User } from '@/auth/decorators/user.decorator';
+import { UpdatePreferencesDto } from '@/user/dto/update-preferences.dto';
+import { UpdateAboutDto } from '@/user/dto/update-about.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 
 @ApiTags('🙋 Profile')

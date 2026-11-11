@@ -1,17 +1,17 @@
 import mongoose, { model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
-import { ConversationService } from '../conversation.service';
-import { UserService } from '../../user/user.service';
-import { Conversation } from '../schemas/conversation.schema';
+import { ConversationService } from '@/conversation/conversation.service';
+import { UserService } from '@/user/user.service';
+import { Conversation } from '@/conversation/schemas/conversation.schema';
 import { Model, Types } from 'mongoose';
-import { MessagesService } from '../../messages/messages.service';
+import { MessagesService } from '@/messages/messages.service';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { CreateConversationDto } from '../dto/create-conversation.dto';
+import { CreateConversationDto } from '@/conversation/dto/create-conversation.dto';
 import { INestApplication, NotFoundException } from '@nestjs/common';
 import { conversationMock } from './mock/conversation.mock';
-import { SetupTestApp } from '../../../test/test-setup';
-import { CreateUserDto } from '../../user/dto/create-user.dto';
-import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
+import { SetupTestApp } from '@test/test-setup';
+import { CreateUserDto } from '@/user/dto/create-user.dto';
+import { mockUser, mockUserMaria } from '@/user/test/mock/user.mock';
 
 let app: INestApplication;
 let conversationService: ConversationService;

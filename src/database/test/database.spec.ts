@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DatabaseModule } from '../../database/database.module'; // ajuste esse path se necessário
+import { DatabaseModule } from '@/database/database.module'; // ajuste esse path se necessário
 import mongoose from 'mongoose';
-import { DatabaseConfig } from '../database.config';
+import { DatabaseConfig } from '@/database/database.config';
 
 describe('🍃 MongoDB Connection', () => {
   let app: TestingModule;

@@ -3,9 +3,9 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import { Admin } from "./admin.schema";
 import { CreateAdminDto } from "./dto/create-admin.dto";
-import { CryptService } from "../security/crypt.service";
-import { UserService } from "../user/user.service";
-import { User } from "../user/user.schema";
+import { CryptService } from "@/security/crypt.service";
+import { UserService } from "@/user/user.service";
+import { User } from "@/user/user.schema";
 
 @Injectable()
 export class AdminService {

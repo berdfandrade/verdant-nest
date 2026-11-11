@@ -1,6 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MessagesService } from './messages.service';
-import { ConversationModule } from '../conversation/conversation.module';
+import { ConversationModule } from '@/conversation/conversation.module';
 import { Message, MessageSchema } from './message.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MessagesController } from './messages.controller';

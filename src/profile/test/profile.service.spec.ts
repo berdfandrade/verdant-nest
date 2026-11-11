@@ -1,15 +1,15 @@
 import mongoose from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
-import { ProfileService, birthDateRangeFromAges } from '../profile.service';
+import { ProfileService, birthDateRangeFromAges } from '@/profile/profile.service';
 import { Model } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { INestApplication } from '@nestjs/common';
-import { SetupTestApp } from '../../../test/test-setup';
-import { User } from '../../user/user.schema';
-import { UserService } from '../../user/user.service';
-import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
-import { CreateUserDto } from '../../user/dto/create-user.dto';
-import { LikesService } from '../../likes/likes.service';
+import { SetupTestApp } from '@test/test-setup';
+import { User } from '@/user/user.schema';
+import { UserService } from '@/user/user.service';
+import { mockUser, mockUserMaria } from '@/user/test/mock/user.mock';
+import { CreateUserDto } from '@/user/dto/create-user.dto';
+import { LikesService } from '@/likes/likes.service';
 
 let app: INestApplication;
 let mongoServer: MongoMemoryServer;

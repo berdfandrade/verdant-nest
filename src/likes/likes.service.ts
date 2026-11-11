@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { UserService } from '../user/user.service';
-import { ConversationService } from '../conversation/conversation.service';
-import { User } from '../user/user.schema';
-import MongoDbUtils from '../utils/MongoDB.utils';
+import { UserService } from '@/user/user.service';
+import { ConversationService } from '@/conversation/conversation.service';
+import { User } from '@/user/user.schema';
+import MongoDbUtils from '@/utils/MongoDB.utils';
 
 export interface LikeReponse {
 	liked: boolean;

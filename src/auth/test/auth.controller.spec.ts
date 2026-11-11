@@ -3,11 +3,11 @@ import * as request from 'supertest';
 import mongoose, { Model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { SetupTestApp } from '../../../test/test-setup';
-import { User } from '../../user/user.schema';
-import { UserService } from '../../user/user.service';
-import { mockUser } from '../../user/test/mock/user.mock';
-import { AuthDto } from '../dto/auth.dto';
+import { SetupTestApp } from '@test/test-setup';
+import { User } from '@/user/user.schema';
+import { UserService } from '@/user/user.service';
+import { mockUser } from '@/user/test/mock/user.mock';
+import { AuthDto } from '@/auth/dto/auth.dto';
 
 let app: INestApplication;
 let mongoServer: MongoMemoryServer;

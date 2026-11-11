@@ -1,17 +1,17 @@
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
+import { mockUser, mockUserMaria } from '@/user/test/mock/user.mock';
 import { Model } from 'mongoose';
 import mongoose from 'mongoose';
-import { User, } from '../../user/user.schema';
+import { User, } from '@/user/user.schema';
 import { getModelToken} from '@nestjs/mongoose';
-import {  LikesService } from '../likes.service';
-import { UserService } from '../../user/user.service';
+import {  LikesService } from '@/likes/likes.service';
+import { UserService } from '@/user/user.service';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { AuthService } from '../../auth/auth.service';
-import { AuthDto } from '../../auth/dto/auth.dto';
-import { SetupTestApp } from '../../../test/test-setup';
-import { Conversation } from '../../conversation/schemas/conversation.schema';
+import { AuthService } from '@/auth/auth.service';
+import { AuthDto } from '@/auth/dto/auth.dto';
+import { SetupTestApp } from '@test/test-setup';
+import { Conversation } from '@/conversation/schemas/conversation.schema';
 
 let app: INestApplication;
 let mongoServer : MongoMemoryServer

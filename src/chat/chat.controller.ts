@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { AdminOnly } from '../auth/decorators/admin-only-decorator';
+import { AdminOnly } from '@/auth/decorators/admin-only-decorator';
 
 @ApiTags('🦜 Chat')
 @Controller('chat')

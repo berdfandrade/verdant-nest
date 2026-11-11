@@ -1,11 +1,11 @@
 import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
-import { CryptService } from '../security/crypt.service';
-import { UserService } from '../user/user.service';
+import { CryptService } from '@/security/crypt.service';
+import { UserService } from '@/user/user.service';
 import { AuthDto } from './dto/auth.dto';
-import { AdminService } from '../admin/admin.service';
-import { RefreshJwtConfig } from '../config/jwt.config';
+import { AdminService } from '@/admin/admin.service';
+import { RefreshJwtConfig } from '@/config/jwt.config';
 
 export interface TokenPayload {
 	sub: string;
