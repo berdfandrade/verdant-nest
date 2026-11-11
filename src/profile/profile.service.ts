@@ -23,6 +23,7 @@ const FEED_HIDDEN_FIELDS = [
 	'likedProfiles',
 	'likedYouProfiles',
 	'passedProfiles',
+	'blockedUsers',
 	'matches',
 	'conversations',
 	'connectedAccounts',
@@ -70,17 +71,20 @@ export class ProfileService {
 		const distanceInKm = Number.isFinite(parsedDistance) ? parsedDistance : DEFAULT_DISTANCE_KM;
 		const maxDistance = distanceInKm * 1000; // convert to meters
 
-		// Não mostra: eu mesmo, quem eu já curti, passei ou dei match
+		// Não mostra: eu mesmo, quem eu já curti, passei, dei match ou bloqueei
 		const excludedIds = [
 			myProfile._id,
 			...(myProfile.likedProfiles ?? []),
 			...(myProfile.passedProfiles ?? []),
 			...(myProfile.matches ?? []),
+			...(myProfile.blockedUsers ?? []),
 		];
 
 		const query: Record<string, any> = {
 			_id: { $nin: excludedIds },
 			active: true,
+			// ...nem quem me bloqueou
+			blockedUsers: { $ne: myProfile._id },
 		};
 
 		const [minAge, maxAge] = myProfile.preferences?.ageRange ?? [];

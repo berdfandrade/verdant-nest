@@ -15,6 +15,7 @@ import { forwardRef } from "@nestjs/common";
 import { AuthModule } from "./auth/auth.module";
 import { ProfileModule } from "./profile/profile.module";
 import { AdminModule } from "./admin/admin.module";
+import { SafetyModule } from "./safety/safety.module";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminModule } from "./admin/admin.module";
     UserModule,
     AuthModule,
     AdminModule,
+    SafetyModule,
     ProfileModule,
     ConversationModule,
     DatabaseModule,
