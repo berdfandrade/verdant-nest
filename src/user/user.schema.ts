@@ -51,6 +51,13 @@ export class User extends Document {
 	birthDate: Date;
 
 	/*
+		Gênero ("Female", "Male", "Non-binary"...). Obrigatório no cadastro (CreateUserDto),
+		mas opcional aqui para não invalidar documentos antigos, salvos antes deste campo existir.
+	*/
+	@Prop()
+	gender?: string;
+
+	/*
 		Opcional: o usuário pode se cadastrar sem localização e enviá-la depois
 		(PUT /profile/location). Quando existe, precisa ser um Point válido.
 	*/

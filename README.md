@@ -261,6 +261,8 @@ socket.emit('leave_conversation', { conversationId });
 - **Unlike**: remove o like e, se houver match, desfaz o match nos dois perfis e **arquiva** a conversa (`isActive: false`, `archivedAt`). Conversas arquivadas não recebem mensagens.
 - **Pass**: o perfil vai para `passedProfiles` e não aparece mais no feed. Curtir depois desfaz o pass.
 - **Feed**: até 50 perfis ativos dentro de `preferences.distance` km (padrão 10 km, aceita `"50"` ou `"50km"`) e de `preferences.ageRange`, excluindo eu mesmo, quem eu curti, passei ou dei match. Os resultados vêm ordenados por distância e com o campo `distance` (em metros). E-mail, telefone e as listas internas não aparecem.
+  - **Gênero (todos, mútuo):** só aparecem pessoas cujo `gender` está no meu `showMe` **e** cujo `showMe` inclui o meu gênero. `showMe` vazio ou `"everyone"` não restringe. Valores: `women` ↔ `Female`, `men` ↔ `Male`, `non-binary` ↔ `Non-binary`.
+  - **Filtros avançados (só premium, rígidos):** `verified`, `height` (faixa), `education` (contém o texto), `alcohol`, `smoking`, `children`, `zodiacSign`, `politicalView` e `religion` (exatos, sem diferenciar maiúsculas). Quem não bate, ou não preencheu o campo filtrado, sai do feed. Para usuários sem premium, os filtros ficam salvos mas não são aplicados.
 - **Atualização de usuário**: `PUT /users/:id` ignora campos protegidos (`premium`, `verified`, `active`, `refreshToken`, `matches`, `likedProfiles`, `likedYouProfiles`, `conversations`). A `ValidationPipe` global usa `whitelist: true` e descarta qualquer campo fora do DTO.
 
 ## Testes
