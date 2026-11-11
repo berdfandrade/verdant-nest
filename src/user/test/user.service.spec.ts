@@ -65,6 +65,14 @@ describe('🧑 UserService', () => {
 			expect(user.username).toBe(mockUser.username);
 		});
 
+		it('should create a user without location (sent later by the app)', async () => {
+			const { location, ...withoutLocation } = mockUser;
+			const user = await userService.create(withoutLocation);
+
+			expect(user.id).toBeDefined();
+			expect(user.location).toBeUndefined();
+		});
+
 		it('should return an error if the email is already registered', async () => {
 			const createUserDto: CreateUserDto = mockUser;
 			await userService.create(createUserDto);
