@@ -217,4 +217,25 @@ describe('🦜 ChatGateway', () => {
 			await gateway.handleDisconnect(client);
 		});
 	});
+
+	describe('🚦 send_message rate limit', () => {
+		afterEach(() => {
+			delete process.env.RATE_LIMIT_ENABLED;
+		});
+
+		it('should refuse messages above the limit', async () => {
+			process.env.RATE_LIMIT_ENABLED = 'true';
+			const { user, conversation, client } = await connectBernardo();
+			// Simula que o limite da janela já foi atingido
+			await redisService.setKey(`ratelimit:ws:send:${user.id}`, 999);
+
+			await gateway.handleSendMessage({ conversationId: conversation.id, content: 'Mais uma' }, client);
+
+			expect(client.emit).toHaveBeenCalledWith('send_message_error', { message: 'Too many messages, slow down' });
+			expect((await conversationService.getMessages(conversation.id)).length).toBe(0);
+
+			await redisService.deleteKey(`ratelimit:ws:send:${user.id}`);
+			await gateway.handleDisconnect(client);
+		});
+	});
 });

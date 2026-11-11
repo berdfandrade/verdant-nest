@@ -1,6 +1,10 @@
 import { ConfigModule } from "@nestjs/config";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { RATE_LIMITS, RateLimitConfig } from "./config/rate-limit.config";
+import { HttpThrottlerGuard } from "./config/http-throttler.guard";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { UserModule } from "./user/user.module";
@@ -19,6 +23,10 @@ import { AdminModule } from "./admin/admin.module";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: "default", ...RATE_LIMITS.default }],
+      skipIf: () => !RateLimitConfig.enabled,
+    }),
     ServeStaticModule.forRoot(StaticFilesConfig),
     forwardRef(() => ChatModule),
     UserModule,
@@ -32,6 +40,6 @@ import { AdminModule } from "./admin/admin.module";
     MessagesModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: HttpThrottlerGuard }],
 })
 export class AppModule {}

@@ -9,6 +9,8 @@ import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { SelfOnly } from '@/auth/decorators/self-only.decorator';
 import { AdminOnly } from '@/auth/decorators/admin-only-decorator';
 import { User as CurrentUser } from '@/auth/decorators/user.decorator';
+import { Throttle } from '@nestjs/throttler';
+import { RATE_LIMITS } from '@/config/rate-limit.config';
 
 @ApiTags('👤 Users')
 @ApiBearerAuth()
@@ -18,6 +20,7 @@ export class UserController {
 
 	// Cadastro (público)
 	@Post()
+	@Throttle({ default: RATE_LIMITS.signup })
 	async create(@Body() createUserDto: CreateUserDto): Promise<User> {
 		return this.userService.create(createUserDto);
 	}

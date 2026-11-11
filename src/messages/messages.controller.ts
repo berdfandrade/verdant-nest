@@ -7,6 +7,8 @@ import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { User } from '@/auth/decorators/user.decorator';
 import { ConversationService } from '@/conversation/conversation.service';
 import MongoDbUtils from '@/utils/MongoDB.utils';
+import { Throttle } from '@nestjs/throttler';
+import { RATE_LIMITS } from '@/config/rate-limit.config';
 
 @ApiTags('✉️ Message')
 @ApiBearerAuth()
@@ -19,6 +21,7 @@ export class MessagesController {
 	) {}
 
 	@Post()
+	@Throttle({ default: RATE_LIMITS.sendMessage })
 	async send(@Body() data: SendMessageDto, @User() user: any) {
 		return this.messageService.create({ ...data, sender: user._id });
 	}

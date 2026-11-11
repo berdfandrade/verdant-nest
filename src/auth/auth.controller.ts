@@ -8,6 +8,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminOnly } from './decorators/admin-only-decorator';
 
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
+import { RATE_LIMITS } from '@/config/rate-limit.config';
 
 @ApiTags('🔒 Auth')
 @ApiBearerAuth()
@@ -17,12 +19,14 @@ export class AuthController {
 
 	@Post()
 	@HttpCode(200)
+	@Throttle({ default: RATE_LIMITS.login })
 	async login(@Body() authDto: AuthDto) {
 		return this.authService.validateAndLogin(authDto);
 	}
 
 	@Post('refresh')
 	@HttpCode(200)
+	@Throttle({ default: RATE_LIMITS.refresh })
 	async refresh(@Body() dto: RefreshTokenDto) {
 		return this.authService.refreshTokens(dto.refresh_token);
 	}
@@ -42,6 +46,7 @@ export class AuthController {
 
 	@Post('admin')
 	@HttpCode(200)
+	@Throttle({ default: RATE_LIMITS.login })
 	async adminLogin(@Body() authDto: AuthDto) {
 		return this.authService.adminLogin(authDto);
 	}

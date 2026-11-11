@@ -161,6 +161,11 @@ export class ChatGateway implements GatewayConfig {
 				return;
 			}
 
+			if (!(await this.chatService.allowMessage(sender))) {
+				client.emit('send_message_error', { message: 'Too many messages, slow down' });
+				return;
+			}
+
 			const isUserAllowed = await this.chatService.userIsAllowed(sender, data.conversationId);
 
 			if (!isUserAllowed) {
