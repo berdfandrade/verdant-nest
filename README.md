@@ -146,7 +146,7 @@ Os valores ficam em `src/config/rate-limit.config.ts`. Atrás de proxy, defina `
 
 ## Endpoints
 
-Legenda: 🌐 público · 🔑 usuário logado · 🙋 apenas o próprio usuário · 👑 admin
+Legenda: 🌐 público · 🔑 usuário logado · ⭐ premium · 🙋 apenas o próprio usuário · 👑 admin
 
 ### Auth — `/login`
 
@@ -189,7 +189,12 @@ Todas as rotas usam o usuário do token; o body leva só o perfil alvo: `{ "prof
 | POST | `/likes/unlike` | 🔑 | Desfaz o like/match (arquiva a conversa) |
 | POST | `/likes/pass` | 🔑 | "Passa" o perfil, que não volta mais no feed |
 | GET | `/likes/matches` | 🔑 | Meus matches |
-| GET | `/likes/received` | 🔑 | Quem me curtiu |
+| GET | `/likes/received` | 🔑 | Quem me curtiu. Super likes vêm primeiro, com `superLike: true` |
+| POST | `/likes/super` | ⭐ | Super like (máx. 5 a cada 24h; acima disso, **429**). Também transforma um like comum em super like |
+| GET | `/likes/super` | ⭐ | `{ limit, used, left, nextResetAt }` dos super likes |
+| POST | `/likes/rewind` | ⭐ | Desfaz o último pass (o perfil volta para o feed) |
+
+⭐ = premium (403 para quem não é premium). Premium também ativa os filtros avançados do feed.
 
 ### Conversas — `/conversations`
 
@@ -224,6 +229,7 @@ Todas as rotas usam o usuário do token; o body leva só o perfil alvo: `{ "prof
 | PATCH | `/admin/users/:id/ban` | 👑 | Bane (desativa e invalida o refresh token) |
 | PATCH | `/admin/users/:id/unban` | 👑 | Reativa |
 | PATCH | `/admin/users/:id/verify` | 👑 | Marca como verificado |
+| PATCH | `/admin/users/:id/premium` | 👑 | Concede ou remove premium `{ premium: true \| false }` |
 | DELETE | `/admin/users/:id` | 👑 | Remove o usuário |
 
 ### Outros
