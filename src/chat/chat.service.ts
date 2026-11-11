@@ -6,6 +6,7 @@ import { Message } from '@/messages/message.schema';
 import { Conversation } from '@/conversation/schemas/conversation.schema';
 import { MessagesService } from '@/messages/messages.service';
 import MongoDbUtils from '@/utils/MongoDB.utils';
+import { RATE_LIMITS, RateLimitConfig } from '@/config/rate-limit.config';
 
 export interface ChatConnection {
 	socketId: string;
@@ -103,6 +104,14 @@ export class ChatService {
 		} catch {
 			return false;
 		}
+	}
+
+	// Limite de mensagens pelo socket, por usuário (contador no Redis, vale entre instâncias)
+	async allowMessage(userId: string): Promise<boolean> {
+		if (!RateLimitConfig.enabled) return true;
+		const { limit, windowSeconds } = RATE_LIMITS.socketMessages;
+		const count = await this.redisService.increment(`ratelimit:ws:send:${userId}`, windowSeconds);
+		return count <= limit;
 	}
 
 	// ---- Presença (online/offline) ----

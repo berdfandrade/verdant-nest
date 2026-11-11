@@ -15,6 +15,7 @@ import { ChatModule } from '@/chat/chat.module';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { mockUser, mockUserMaria } from '@/user/test/mock/user.mock';
 import { RedisService } from '@/redis/redis.service';
+import { RATE_LIMITS } from '@/config/rate-limit.config';
 
 let mongoServer: MongoMemoryServer;
 let chatService: ChatService;
@@ -160,6 +161,36 @@ describe('🦜 ChatService', () => {
 
 			const history = await conversationService.getMessages(conversation.id);
 			expect(history.length).toBe(1);
+		});
+	});
+
+	describe('🚦 allowMessage (socket rate limit)', () => {
+		afterEach(() => {
+			delete process.env.RATE_LIMIT_ENABLED;
+		});
+
+		it(`should allow ${RATE_LIMITS.socketMessages.limit} messages per window, then refuse`, async () => {
+			process.env.RATE_LIMIT_ENABLED = 'true';
+			const userId = new mongoose.Types.ObjectId().toString();
+
+			const results: boolean[] = [];
+			for (let i = 0; i <= RATE_LIMITS.socketMessages.limit; i++) {
+				results.push(await chatService.allowMessage(userId));
+			}
+
+			expect(results.filter(Boolean).length).toBe(RATE_LIMITS.socketMessages.limit);
+			expect(results.at(-1)).toBe(false);
+
+			await redisService.deleteKey(`ratelimit:ws:send:${userId}`);
+		});
+
+		it('should always allow when rate limiting is disabled', async () => {
+			process.env.RATE_LIMIT_ENABLED = 'false';
+			const userId = new mongoose.Types.ObjectId().toString();
+
+			for (let i = 0; i <= RATE_LIMITS.socketMessages.limit; i++) {
+				expect(await chatService.allowMessage(userId)).toBe(true);
+			}
 		});
 	});
 });

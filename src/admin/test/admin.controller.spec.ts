@@ -210,6 +210,31 @@ describe('👑 AdminController (e2e)', () => {
 			expect(verify.body.verified).toBe(true);
 		});
 
+		it('PATCH /admin/users/:id/premium should grant and remove premium', async () => {
+			const user = await userService.create({ ...mockUserMaria });
+			const token = await adminToken();
+			const server = app.getHttpServer();
+
+			const grant = await request(server)
+				.patch(`/admin/users/${user.id}/premium`)
+				.set('Authorization', `Bearer ${token}`)
+				.send({ premium: true });
+			expect(grant.status).toBe(200);
+			expect(grant.body.premium).toBe(true);
+
+			const invalid = await request(server)
+				.patch(`/admin/users/${user.id}/premium`)
+				.set('Authorization', `Bearer ${token}`)
+				.send({ premium: 'yes' });
+			expect(invalid.status).toBe(400);
+
+			const remove = await request(server)
+				.patch(`/admin/users/${user.id}/premium`)
+				.set('Authorization', `Bearer ${token}`)
+				.send({ premium: false });
+			expect(remove.body.premium).toBe(false);
+		});
+
 		it('DELETE /admin/users/:id should delete the user', async () => {
 			const user = await userService.create(mockUser);
 			const token = await adminToken();

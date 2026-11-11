@@ -94,17 +94,16 @@ export class ConversationService {
 			.lean()
 			.exec();
 
-		// Anexa a última mensagem de cada conversa
+		// Anexa a última mensagem e quantas mensagens recebidas ainda não li
 		return Promise.all(
 			conversations.map(async conversation => {
-				const lastMessage = await this.messageModel
-					.findOne({ conversationId: conversation._id })
-					.sort({ sentAt: -1 })
-					.lean()
-					.exec();
+				const [lastMessage, unreadCount] = await Promise.all([
+					this.messageModel.findOne({ conversationId: conversation._id }).sort({ sentAt: -1 }).lean().exec(),
+					this.messageModel.countDocuments({ conversationId: conversation._id, sender: { $ne: id }, readAt: null }),
+				]);
 
 				const { messages, ...rest } = conversation as any;
-				return { ...rest, lastMessage: lastMessage ?? null };
+				return { ...rest, lastMessage: lastMessage ?? null, unreadCount };
 			}),
 		);
 	}

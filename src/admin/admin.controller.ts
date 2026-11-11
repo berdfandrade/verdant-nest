@@ -4,6 +4,7 @@ import { CreateAdminDto } from './dto/create-admin.dto';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AdminOnly } from '@/auth/decorators/admin-only-decorator';
 import MongoDbUtils from '@/utils/MongoDB.utils';
+import { SetPremiumDto } from './dto/set-premium.dto';
 import { SafetyService } from '@/safety/safety.service';
 import { REPORT_STATUSES, type ReportStatus } from '@/safety/report.schema';
 import { ReviewReportDto } from '@/safety/dto/report.dto';
@@ -69,6 +70,12 @@ export class AdminController {
     @Patch('users/:id/verify')
     async verify(@Param('id') id: string) {
         return this.adminService.verifyUser(MongoDbUtils.toObjectId(id));
+    }
+
+    @AdminOnly()
+    @Patch('users/:id/premium')
+    async setPremium(@Param('id') id: string, @Body() dto: SetPremiumDto) {
+        return this.adminService.setPremium(MongoDbUtils.toObjectId(id), dto.premium);
     }
 
     @AdminOnly()

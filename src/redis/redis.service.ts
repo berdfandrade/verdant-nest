@@ -47,6 +47,13 @@ export class RedisService implements OnModuleDestroy {
 		return this.redis.smembers(key);
 	}
 
+	// Incrementa um contador; a expiração é definida no primeiro incremento (janela fixa)
+	async increment(key: string, ttlSeconds: number): Promise<number> {
+		const count = await this.redis.incr(key);
+		if (count === 1) await this.redis.expire(key, ttlSeconds);
+		return count;
+	}
+
 	async onModuleDestroy() {
 		if (this.redis.status !== 'end') {
 			await this.redis.quit();

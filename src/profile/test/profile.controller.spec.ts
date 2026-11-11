@@ -8,7 +8,7 @@ import { User } from '@/user/user.schema';
 import { UserService } from '@/user/user.service';
 import { AuthService } from '@/auth/auth.service';
 import { AuthDto } from '@/auth/dto/auth.dto';
-import { mockUser, mockUserMaria } from '@/user/test/mock/user.mock';
+import { mockUser, mockUserFree, mockUserMaria } from '@/user/test/mock/user.mock';
 
 let app: INestApplication;
 let mongoServer: MongoMemoryServer;
@@ -51,7 +51,7 @@ describe('🙋 ProfileController (e2e)', () => {
 	});
 
 	it('GET /profile/feed should return nearby profiles', async () => {
-		await userService.create(mockUser);
+		await userService.create(mockUserFree);
 		const maria = await userService.create(mockUserMaria);
 		const token = await login();
 
@@ -62,6 +62,19 @@ describe('🙋 ProfileController (e2e)', () => {
 		expect(response.status).toBe(200);
 		expect(response.body.length).toBe(1);
 		expect(response.body[0]._id).toBe(maria.id);
+	});
+
+	it('GET /profile/feed should apply advanced filters for premium users', async () => {
+		await userService.create(mockUser); // premium com filtros que a Maria não atende
+		await userService.create(mockUserMaria);
+		const token = await login();
+
+		const response = await request(app.getHttpServer())
+			.get('/profile/feed')
+			.set('Authorization', `Bearer ${token}`);
+
+		expect(response.status).toBe(200);
+		expect(response.body).toEqual([]);
 	});
 
 	it('GET and PUT /profile/preferences', async () => {

@@ -13,6 +13,7 @@ import { AuthService } from '@/auth/auth.service';
 import { RedisService } from '@/redis/redis.service';
 import { mockUser, mockUserMaria } from '@/user/test/mock/user.mock';
 import { AuthDto } from '@/auth/dto/auth.dto';
+import { MessagesService } from '@/messages/messages.service';
 
 let mongoServer: MongoMemoryServer;
 let gateway: ChatGateway;
@@ -21,6 +22,7 @@ let userService: UserService;
 let authService: AuthService;
 let conversationService: ConversationService;
 let redisService: RedisService;
+let messagesService: MessagesService;
 let userModel: Model<User>;
 let conversationModel: Model<Conversation>;
 
@@ -30,16 +32,23 @@ const CREDENTIALS: AuthDto = {
 };
 
 // Socket "fake" com o mínimo que o gateway usa
-const createFakeSocket = (token?: string) =>
-	({
+const createFakeSocket = (token?: string) => {
+	const rooms = new Set<string>();
+	// O que o socket mandou "para os outros" de uma sala (client.to(room).emit)
+	const broadcasts: { room: string; event: string; data: any }[] = [];
+	return {
 		id: `fake-socket-${new mongoose.Types.ObjectId()}`,
 		data: {} as Record<string, any>,
 		handshake: { auth: { token }, headers: {} },
+		rooms,
+		broadcasts,
 		emit: jest.fn(),
-		join: jest.fn(),
-		leave: jest.fn(),
+		join: jest.fn((room: string) => rooms.add(room)),
+		leave: jest.fn((room: string) => rooms.delete(room)),
+		to: jest.fn((room: string) => ({ emit: (event: string, data: any) => broadcasts.push({ room, event, data }) })),
 		disconnect: jest.fn(),
-	}) as any;
+	} as any;
+};
 
 // Server "fake": guarda para qual sala cada evento foi emitido
 const createFakeServer = () => {
@@ -65,6 +74,7 @@ beforeAll(async () => {
 	authService = moduleFixture.get(AuthService);
 	conversationService = moduleFixture.get(ConversationService);
 	redisService = moduleFixture.get(RedisService);
+	messagesService = moduleFixture.get(MessagesService);
 	userModel = moduleFixture.get(getModelToken(User.name));
 	conversationModel = moduleFixture.get(getModelToken(Conversation.name));
 });
@@ -214,6 +224,111 @@ describe('🦜 ChatGateway', () => {
 			await gateway.handleViewMessages({ conversationId: otherConversation.id }, client);
 			expect(client.emit).toHaveBeenCalledWith('view_messages_error', expect.anything());
 
+			await gateway.handleDisconnect(client);
+		});
+	});
+
+	describe('✍️ typing', () => {
+		it('should tell the other participants that I am typing', async () => {
+			const { user, conversation, client } = await connectBernardo();
+			await gateway.handleJoinConversation({ conversationId: conversation.id }, client);
+
+			gateway.handleTyping({ conversationId: conversation.id, isTyping: true }, client);
+
+			expect(client.broadcasts).toEqual([
+				{
+					room: conversationRoom(conversation.id),
+					event: 'typing',
+					data: { conversationId: conversation.id, userId: user.id, isTyping: true },
+				},
+			]);
+
+			await gateway.handleDisconnect(client);
+		});
+
+		it('should require joining the conversation first', async () => {
+			const { conversation, client } = await connectBernardo();
+
+			gateway.handleTyping({ conversationId: conversation.id, isTyping: true }, client);
+
+			expect(client.broadcasts).toEqual([]);
+			expect(client.emit).toHaveBeenCalledWith('typing_error', { message: 'Join the conversation first' });
+
+			await gateway.handleDisconnect(client);
+		});
+	});
+
+	describe('👀 mark_read', () => {
+		it('should mark the messages I received as read and notify the room', async () => {
+			const { user, maria, conversation, client } = await connectBernardo();
+			const fromMaria = await messagesService.create({ sender: maria.id, conversationId: conversation.id, content: 'Oi!' });
+			const fromMe = await messagesService.create({ sender: user.id, conversationId: conversation.id, content: 'Olá!' });
+			await gateway.handleJoinConversation({ conversationId: conversation.id }, client);
+
+			await gateway.handleMarkRead({ conversationId: conversation.id }, client);
+
+			const messages = await conversationService.getMessages(conversation.id);
+			expect(messages.find(m => m.id === fromMaria.id)?.readAt).toBeInstanceOf(Date);
+			// A minha própria mensagem não é "lida por mim"
+			expect(messages.find(m => m.id === fromMe.id)?.readAt).toBeNull();
+
+			expect(gateway.server['emitted']).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						room: conversationRoom(conversation.id),
+						event: 'messages_read',
+						data: expect.objectContaining({ conversationId: conversation.id, userId: user.id }),
+					}),
+				]),
+			);
+			expect(client.emit).toHaveBeenCalledWith('marked_read', { conversationId: conversation.id, count: 1 });
+
+			await gateway.handleDisconnect(client);
+		});
+
+		it('should not notify again when there is nothing new to read', async () => {
+			const { maria, conversation, client } = await connectBernardo();
+			await messagesService.create({ sender: maria.id, conversationId: conversation.id, content: 'Oi!' });
+			await gateway.handleJoinConversation({ conversationId: conversation.id }, client);
+
+			await gateway.handleMarkRead({ conversationId: conversation.id }, client);
+			await gateway.handleMarkRead({ conversationId: conversation.id }, client);
+
+			const readEvents = gateway.server['emitted'].filter((e: any) => e.event === 'messages_read');
+			expect(readEvents.length).toBe(1);
+			expect(client.emit).toHaveBeenLastCalledWith('marked_read', { conversationId: conversation.id, count: 0 });
+
+			await gateway.handleDisconnect(client);
+		});
+
+		it('should require joining the conversation first', async () => {
+			const { conversation, client } = await connectBernardo();
+
+			await gateway.handleMarkRead({ conversationId: conversation.id }, client);
+
+			expect(client.emit).toHaveBeenCalledWith('mark_read_error', { message: 'Join the conversation first' });
+
+			await gateway.handleDisconnect(client);
+		});
+	});
+
+	describe('🚦 send_message rate limit', () => {
+		afterEach(() => {
+			delete process.env.RATE_LIMIT_ENABLED;
+		});
+
+		it('should refuse messages above the limit', async () => {
+			process.env.RATE_LIMIT_ENABLED = 'true';
+			const { user, conversation, client } = await connectBernardo();
+			// Simula que o limite da janela já foi atingido
+			await redisService.setKey(`ratelimit:ws:send:${user.id}`, 999);
+
+			await gateway.handleSendMessage({ conversationId: conversation.id, content: 'Mais uma' }, client);
+
+			expect(client.emit).toHaveBeenCalledWith('send_message_error', { message: 'Too many messages, slow down' });
+			expect((await conversationService.getMessages(conversation.id)).length).toBe(0);
+
+			await redisService.deleteKey(`ratelimit:ws:send:${user.id}`);
 			await gateway.handleDisconnect(client);
 		});
 	});

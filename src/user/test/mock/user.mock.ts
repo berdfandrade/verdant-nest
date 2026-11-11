@@ -127,3 +127,12 @@ export const mockUserMaria: CreateUserDto = {
 		},
 	},
 };
+
+/*
+	Bernardo sem premium: os filtros avançados não valem para ele.
+	Use nos testes de feed que não são sobre filtros avançados.
+*/
+export const mockUserFree: CreateUserDto = {
+	...mockUser,
+	premium: false,
+};
