@@ -12,6 +12,8 @@ import { mockUser, mockUserMaria } from '@/user/test/mock/user.mock';
 import { Admin } from '@/admin/admin.schema';
 import { AdminService } from '@/admin/admin.service';
 import { mockAdmin } from './mock/admin.mock';
+import { SafetyService } from '@/safety/safety.service';
+import { Report } from '@/safety/report.schema';
 
 let app: INestApplication;
 let mongoServer: MongoMemoryServer;
@@ -20,6 +22,8 @@ let authService: AuthService;
 let adminService: AdminService;
 let userModel: Model<User>;
 let adminModel: Model<Admin>;
+let reportModel: Model<Report>;
+let safetyService: SafetyService;
 
 const CREDENTIALS: AuthDto = {
 	email: 'bernardo@example.com',
@@ -43,11 +47,14 @@ beforeAll(async () => {
 	adminService = moduleFixture.get(AdminService);
 	userModel = moduleFixture.get(getModelToken(User.name));
 	adminModel = moduleFixture.get(getModelToken(Admin.name));
+	reportModel = moduleFixture.get(getModelToken(Report.name));
+	safetyService = moduleFixture.get(SafetyService);
 });
 
 beforeEach(async () => {
 	await userModel.deleteMany({});
 	await adminModel.deleteMany({});
+	await reportModel.deleteMany({});
 });
 
 afterAll(async () => {
@@ -203,6 +210,31 @@ describe('👑 AdminController (e2e)', () => {
 			expect(verify.body.verified).toBe(true);
 		});
 
+		it('PATCH /admin/users/:id/premium should grant and remove premium', async () => {
+			const user = await userService.create({ ...mockUserMaria });
+			const token = await adminToken();
+			const server = app.getHttpServer();
+
+			const grant = await request(server)
+				.patch(`/admin/users/${user.id}/premium`)
+				.set('Authorization', `Bearer ${token}`)
+				.send({ premium: true });
+			expect(grant.status).toBe(200);
+			expect(grant.body.premium).toBe(true);
+
+			const invalid = await request(server)
+				.patch(`/admin/users/${user.id}/premium`)
+				.set('Authorization', `Bearer ${token}`)
+				.send({ premium: 'yes' });
+			expect(invalid.status).toBe(400);
+
+			const remove = await request(server)
+				.patch(`/admin/users/${user.id}/premium`)
+				.set('Authorization', `Bearer ${token}`)
+				.send({ premium: false });
+			expect(remove.body.premium).toBe(false);
+		});
+
 		it('DELETE /admin/users/:id should delete the user', async () => {
 			const user = await userService.create(mockUser);
 			const token = await adminToken();
@@ -225,6 +257,81 @@ describe('👑 AdminController (e2e)', () => {
 				.set('Authorization', `Bearer ${token}`);
 
 			expect(response.body).toEqual({ users: 2, activeUsers: 2, premiumUsers: 1, verifiedUsers: 1 });
+		});
+	});
+
+	describe('🚩 Reports', () => {
+		const reportMaria = async () => {
+			const bernardo = await userService.create(mockUser);
+			const maria = await userService.create(mockUserMaria);
+			const { reportId } = await safetyService.report(bernardo.id, { userId: maria.id, reason: 'spam' });
+			return { reportId };
+		};
+
+		it('GET /admin/reports should be admin only', async () => {
+			await userService.create(mockUser);
+			const { access_token } = await authService.validateAndLogin(CREDENTIALS);
+
+			const response = await request(app.getHttpServer())
+				.get('/admin/reports')
+				.set('Authorization', `Bearer ${access_token}`);
+
+			expect(response.status).toBe(401);
+		});
+
+		it('GET /admin/reports should list reports with reporter and reported', async () => {
+			await reportMaria();
+			const token = await adminToken();
+
+			const response = await request(app.getHttpServer())
+				.get('/admin/reports?status=open')
+				.set('Authorization', `Bearer ${token}`);
+
+			expect(response.status).toBe(200);
+			expect(response.body.total).toBe(1);
+			expect(response.body.reports[0].reported.fullName).toBe(mockUserMaria.fullName);
+			expect(response.body.reports[0].reporter.fullName).toBe(mockUser.fullName);
+		});
+
+		it('GET /admin/reports should validate the status filter', async () => {
+			const token = await adminToken();
+
+			const response = await request(app.getHttpServer())
+				.get('/admin/reports?status=whatever')
+				.set('Authorization', `Bearer ${token}`);
+
+			expect(response.status).toBe(400);
+		});
+
+		it('PATCH /admin/reports/:id should review a report', async () => {
+			const { reportId } = await reportMaria();
+			const token = await adminToken();
+
+			const response = await request(app.getHttpServer())
+				.patch(`/admin/reports/${reportId}`)
+				.set('Authorization', `Bearer ${token}`)
+				.send({ status: 'reviewed' });
+
+			expect(response.status).toBe(200);
+			expect(response.body.status).toBe('reviewed');
+			expect(response.body.reviewedAt).toBeDefined();
+
+			const open = await request(app.getHttpServer())
+				.get('/admin/reports?status=open')
+				.set('Authorization', `Bearer ${token}`);
+			expect(open.body.total).toBe(0);
+		});
+
+		it('PATCH /admin/reports/:id should not accept "open" as a review status', async () => {
+			const { reportId } = await reportMaria();
+			const token = await adminToken();
+
+			const response = await request(app.getHttpServer())
+				.patch(`/admin/reports/${reportId}`)
+				.set('Authorization', `Bearer ${token}`)
+				.send({ status: 'open' });
+
+			expect(response.status).toBe(400);
 		});
 	});
 });

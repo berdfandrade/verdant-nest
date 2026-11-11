@@ -4,13 +4,20 @@ import { CreateAdminDto } from './dto/create-admin.dto';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AdminOnly } from '@/auth/decorators/admin-only-decorator';
 import MongoDbUtils from '@/utils/MongoDB.utils';
+import { SetPremiumDto } from './dto/set-premium.dto';
+import { SafetyService } from '@/safety/safety.service';
+import { REPORT_STATUSES, type ReportStatus } from '@/safety/report.schema';
+import { ReviewReportDto } from '@/safety/dto/report.dto';
 
 @ApiTags('👑 Admin')
 @ApiBearerAuth()
 @Controller('admin')
 export class AdminController {
 
-    constructor(private readonly adminService : AdminService) {}
+    constructor(
+        private readonly adminService : AdminService,
+        private readonly safetyService: SafetyService,
+    ) {}
 
     @Post()
     async create(@Body() createAdminDto : CreateAdminDto ) {
@@ -66,8 +73,38 @@ export class AdminController {
     }
 
     @AdminOnly()
+    @Patch('users/:id/premium')
+    async setPremium(@Param('id') id: string, @Body() dto: SetPremiumDto) {
+        return this.adminService.setPremium(MongoDbUtils.toObjectId(id), dto.premium);
+    }
+
+    @AdminOnly()
     @Delete('users/:id')
     async deleteUser(@Param('id') id: string) {
         return this.adminService.deleteUser(MongoDbUtils.toObjectId(id));
+    }
+
+    // ---- Denúncias ----
+
+    @AdminOnly()
+    @ApiQuery({ name: 'status', required: false, enum: REPORT_STATUSES })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    @ApiQuery({ name: 'skip', required: false, type: Number })
+    @Get('reports')
+    async listReports(
+        @Query('status') status?: string,
+        @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit = 50,
+        @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip = 0,
+    ) {
+        if (status && !REPORT_STATUSES.includes(status as ReportStatus)) {
+            throw new BadRequestException(`status must be one of: ${REPORT_STATUSES.join(', ')}`);
+        }
+        return this.safetyService.listReports(status as ReportStatus | undefined, Math.min(limit, 100), skip);
+    }
+
+    @AdminOnly()
+    @Patch('reports/:id')
+    async reviewReport(@Param('id') id: string, @Body() dto: ReviewReportDto) {
+        return this.safetyService.reviewReport(id, dto.status);
     }
 }

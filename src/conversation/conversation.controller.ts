@@ -9,11 +9,13 @@ import {
 	ForbiddenException,
 	UseGuards,
 	Delete,
+	HttpCode,
 	DefaultValuePipe,
 	ParseIntPipe,
 } from '@nestjs/common';
 import { User } from '@/auth/decorators/user.decorator';
 import { ConversationService } from './conversation.service';
+import { MessagesService } from '@/messages/messages.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import MongoDbUtils from '@/utils/MongoDB.utils';
@@ -24,7 +26,10 @@ import { AdminOnly } from '@/auth/decorators/admin-only-decorator';
 @ApiBearerAuth()
 @Controller('conversations')
 export class ConversationController {
-	constructor(private readonly conversationService: ConversationService) {}
+	constructor(
+		private readonly conversationService: ConversationService,
+		private readonly messagesService: MessagesService,
+	) {}
 
 	// Conversas normalmente nascem de um match; criação manual é só para admin
 	@AdminOnly()
@@ -83,6 +88,16 @@ export class ConversationController {
 	) {
 		await this.conversationService.findForParticipant(id, user.id);
 		return this.conversationService.getMessages(id, Math.min(limit, 100), skip);
+	}
+
+	// Marca como lidas as mensagens que recebi nesta conversa.
+	// (Em tempo real, prefira o evento `mark_read` do socket: ele avisa o remetente.)
+	@UseGuards(JwtAuthGuard)
+	@Post(':id/read')
+	@HttpCode(200)
+	async markRead(@Param('id') id: string, @User() user: any) {
+		await this.conversationService.findForParticipant(id, user.id);
+		return this.messagesService.markConversationRead(id, user.id);
 	}
 
 	@AdminOnly()

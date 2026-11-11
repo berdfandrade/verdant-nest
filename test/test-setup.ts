@@ -3,6 +3,8 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { AppModule } from '@/app.module';
 import { validationPipeConfig } from '@/config/validation-pipe.config';
 import { configureCors } from '@/config/cors.config';
+import { configureUploads } from '@/config/uploads.config';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 /*
   Sobe a aplicação inteira (AppModule) para os testes.
@@ -23,9 +25,10 @@ export async function SetupTestApp() {
     imports: [AppModule],
   }).compile();
 
-  const app = moduleFixture.createNestApplication();
+  const app = moduleFixture.createNestApplication<NestExpressApplication>();
   validationPipeConfig(app);
   configureCors(app);
+  configureUploads(app);
   await app.init();
 
   return {

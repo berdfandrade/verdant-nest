@@ -51,6 +51,13 @@ export class User extends Document {
 	birthDate: Date;
 
 	/*
+		Gênero ("Female", "Male", "Non-binary"...). Obrigatório no cadastro (CreateUserDto),
+		mas opcional aqui para não invalidar documentos antigos, salvos antes deste campo existir.
+	*/
+	@Prop()
+	gender?: string;
+
+	/*
 		Opcional: o usuário pode se cadastrar sem localização e enviá-la depois
 		(PUT /profile/location). Quando existe, precisa ser um Point válido.
 	*/
@@ -66,13 +73,19 @@ export class User extends Document {
 	@Prop([String])
 	description: string[];
 
+	/*
+		Fotos do perfil (a primeira é a principal).
+		`key` existe nas fotos enviadas por upload: é a chave no storage, usada para apagar o arquivo.
+		Fotos antigas só com `url` (links externos) continuam válidas.
+	*/
 	@Prop([
 		{
 			url: String,
+			key: String,
 			uploadDate: { type: Date, default: Date.now },
 		},
 	])
-	photos: { url: string; uploadDate: Date }[];
+	photos: { _id?: Types.ObjectId; url: string; key?: string; uploadDate: Date }[];
 
 	@Prop({
 		type: {
@@ -125,6 +138,18 @@ export class User extends Document {
 	// Perfis que o usuário "passou" (deslizou para o lado) e não devem voltar no feed
 	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], default: [] })
 	passedProfiles: Types.ObjectId[];
+
+	// Quem me deu super like (aparece em destaque em "curtiram você")
+	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], default: [] })
+	superLikedBy: Types.ObjectId[];
+
+	// Quando usei meus super likes (limite diário, janela de 24h)
+	@Prop({ type: [Date], default: [] })
+	superLikeHistory: Date[];
+
+	// Usuários que eu bloqueei (some do feed e não podem interagir comigo)
+	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], default: [] })
+	blockedUsers: Types.ObjectId[];
 
 	@Prop({
 		type: {

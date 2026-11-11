@@ -19,8 +19,14 @@ export class Message extends Document {
 
 	@Prop({ type: Date })
 	editedAt?: Date;
+
+	// Quando o outro participante leu (conversas são 1:1)
+	@Prop({ type: Date, default: null })
+	readAt?: Date | null;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
 
 MessageSchema.index({ conversationId: 1, sentAt: -1 });
+// Contagem de não lidas por conversa
+MessageSchema.index({ conversationId: 1, readAt: 1, sender: 1 });

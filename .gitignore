@@ -25,3 +25,6 @@ npm-debug.log*
 
 # Claude Code (configuração local, ex.: launch.json do painel do navegador)
 .claude/
+
+# uploads do driver de storage local
+uploads/

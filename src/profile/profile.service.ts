@@ -5,6 +5,7 @@ import { User, UserModel, USER_PRIVATE_FIELDS } from '@/user/user.schema';
 import { UpdatePreferencesDto } from '@/user/dto/update-preferences.dto';
 import { UpdateAboutDto } from '@/user/dto/update-about.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { advancedFilterConditions, genderConditions } from './feed-filters';
 
 /*
     ProfileService:
@@ -23,6 +24,7 @@ const FEED_HIDDEN_FIELDS = [
 	'likedProfiles',
 	'likedYouProfiles',
 	'passedProfiles',
+	'blockedUsers',
 	'matches',
 	'conversations',
 	'connectedAccounts',
@@ -70,24 +72,35 @@ export class ProfileService {
 		const distanceInKm = Number.isFinite(parsedDistance) ? parsedDistance : DEFAULT_DISTANCE_KM;
 		const maxDistance = distanceInKm * 1000; // convert to meters
 
-		// Não mostra: eu mesmo, quem eu já curti, passei ou dei match
+		// Não mostra: eu mesmo, quem eu já curti, passei, dei match ou bloqueei
 		const excludedIds = [
 			myProfile._id,
 			...(myProfile.likedProfiles ?? []),
 			...(myProfile.passedProfiles ?? []),
 			...(myProfile.matches ?? []),
+			...(myProfile.blockedUsers ?? []),
 		];
 
 		const query: Record<string, any> = {
 			_id: { $nin: excludedIds },
 			active: true,
+			// ...nem quem me bloqueou
+			blockedUsers: { $ne: myProfile._id },
 		};
 
 		const [minAge, maxAge] = myProfile.preferences?.ageRange ?? [];
 		const birthDateRange = birthDateRangeFromAges(minAge, maxAge);
 		if (Object.keys(birthDateRange).length) query.birthDate = birthDateRange;
 
-		// TODO: advancedFilters (verified, altura, educação...) ainda não são aplicados no feed
+		// Gênero (mútuo, para todos)
+		const andConditions = genderConditions(myProfile);
+
+		// Filtros avançados: rígidos, só para premium
+		if (myProfile.premium) {
+			Object.assign(query, advancedFilterConditions(myProfile.preferences?.advancedFilters));
+		}
+
+		if (andConditions.length) query.$and = andConditions;
 
 		const nearbyUsers = await this.userModel.aggregate([
 			{

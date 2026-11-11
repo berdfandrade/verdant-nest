@@ -113,6 +113,11 @@ Veja [`.env.example`](.env.example).
 | `RATE_LIMIT_ENABLED` | `true` (`false` em `NODE_ENV=test`) | Liga/desliga o rate limiting |
 | `TRUST_PROXY` | – | Atrás de proxy/load balancer: número de proxies confiáveis (o IP real vem do `X-Forwarded-For`) |
 | `CORS_ORIGINS` | – | Origens de navegador liberadas (HTTP e WebSocket), separadas por vírgula. `*` libera todas. Sem a variável: tudo liberado em dev, **nada** liberado em produção |
+| `STORAGE_DRIVER` | `local` | Onde salvar as fotos: `local` (disco) ou `s3` |
+| `UPLOADS_DIR` / `UPLOADS_PUBLIC_URL` | `./uploads` / `/uploads` | Pasta e prefixo das URLs no driver local |
+| `S3_BUCKET` / `S3_REGION` / `S3_ENDPOINT` | – / `us-east-1` / – | Bucket do driver S3. `S3_ENDPOINT` serve para provedores compatíveis (MinIO, R2) |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | – | Credenciais do S3 (sem elas, usa a cadeia padrão da AWS) |
+| `S3_PUBLIC_URL` | URL do bucket | Prefixo público das fotos (ex.: CDN) |
 
 > ⚠️ Os valores padrão dos secrets servem só para desenvolvimento. **Sempre** defina secrets próprios em produção.
 
@@ -147,7 +152,7 @@ Os valores ficam em `src/config/rate-limit.config.ts`. Atrás de proxy, defina `
 
 ## Endpoints
 
-Legenda: 🌐 público · 🔑 usuário logado · 🙋 apenas o próprio usuário · 👑 admin
+Legenda: 🌐 público · 🔑 usuário logado · ⭐ premium · 🙋 apenas o próprio usuário · 👑 admin
 
 ### Auth — `/login`
 
@@ -179,6 +184,11 @@ Legenda: 🌐 público · 🔑 usuário logado · 🙋 apenas o próprio usuári
 | GET / PUT | `/profile/preferences` | 🔑 | Preferências (faixa etária, distância, filtros) |
 | GET / PUT | `/profile/about` | 🔑 | Seção "sobre mim" |
 | PUT | `/profile/location` | 🔑 | Atualiza a localização `{ longitude, latitude }` |
+| POST | `/profile/photos` | 🔑 | Envia uma foto (`multipart/form-data`, campo `photo`). JPEG, PNG ou WEBP, até 5 MB, máximo 6 fotos |
+| DELETE | `/profile/photos/:photoId` | 🔑 | Remove a foto (e o arquivo no storage) |
+| PATCH | `/profile/photos/:photoId/main` | 🔑 | Define como foto principal (primeira posição) |
+
+> **Fotos:** o tipo é validado pelo conteúdo do arquivo (magic bytes), não pelo `Content-Type` enviado. O nome no storage é `users/<id>/<uuid>.<ext>`. Com `STORAGE_DRIVER=local` (padrão), os arquivos ficam em `UPLOADS_DIR` e a API serve em `/uploads`. Com `STORAGE_DRIVER=s3`, vão para o bucket (S3, MinIO ou R2) e a URL usa `S3_PUBLIC_URL`. Veja o `.env.example`.
 
 ### Likes — `/likes`
 
@@ -190,13 +200,19 @@ Todas as rotas usam o usuário do token; o body leva só o perfil alvo: `{ "prof
 | POST | `/likes/unlike` | 🔑 | Desfaz o like/match (arquiva a conversa) |
 | POST | `/likes/pass` | 🔑 | "Passa" o perfil, que não volta mais no feed |
 | GET | `/likes/matches` | 🔑 | Meus matches |
-| GET | `/likes/received` | 🔑 | Quem me curtiu |
+| GET | `/likes/received` | 🔑 | Quem me curtiu. Super likes vêm primeiro, com `superLike: true` |
+| POST | `/likes/super` | ⭐ | Super like (máx. 5 a cada 24h; acima disso, **429**). Também transforma um like comum em super like |
+| GET | `/likes/super` | ⭐ | `{ limit, used, left, nextResetAt }` dos super likes |
+| POST | `/likes/rewind` | ⭐ | Desfaz o último pass (o perfil volta para o feed) |
+
+⭐ = premium (403 para quem não é premium). Premium também ativa os filtros avançados do feed.
 
 ### Conversas — `/conversations`
 
 | Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
-| GET | `/conversations/me` | 🔑 | Minhas conversas ativas com a última mensagem |
+| GET | `/conversations/me` | 🔑 | Minhas conversas ativas com a última mensagem e `unreadCount` |
+| POST | `/conversations/:id/read` | 🔑 participante | Marca como lidas as mensagens que recebi (em tempo real, prefira o evento `mark_read`) |
 | GET | `/conversations/:id` | 🔑 participante | Detalhe da conversa |
 | GET | `/conversations/:id/messages?limit=&skip=` | 🔑 participante | Histórico paginado (mais recentes primeiro, `limit` máx. 100) |
 | GET | `/conversations/between/users?user1=&user2=` | 🔑 | Conversa ativa entre dois usuários (você precisa ser um deles) |
@@ -213,6 +229,19 @@ Todas as rotas usam o usuário do token; o body leva só o perfil alvo: `{ "prof
 | DELETE | `/messages/:id` | 🔑 autor | Remove a mensagem |
 | GET | `/messages/search?conversationId=&q=` | 🔑 participante | Busca texto dentro da conversa |
 
+### Segurança — `/safety`
+
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| POST | `/safety/block/:userId` | 🔑 | Bloqueia o usuário |
+| DELETE | `/safety/block/:userId` | 🔑 | Desbloqueia (não refaz o match nem reabre a conversa) |
+| GET | `/safety/blocked` | 🔑 | Usuários que eu bloqueei |
+| POST | `/safety/report` | 🔑 | Denuncia `{ userId, reason, details?, block? }`. Por padrão também bloqueia |
+
+Motivos de denúncia: `spam`, `fake_profile`, `harassment`, `inappropriate_content`, `underage`, `scam` e `other`.
+
+**Efeitos do bloqueio (nos dois sentidos):** desfaz likes e match, arquiva a conversa, tira os dois do feed um do outro e impede novos likes (403). Denunciar a mesma pessoa de novo, enquanto a denúncia está aberta, atualiza a denúncia existente em vez de criar outra.
+
 ### Admin — `/admin`
 
 | Método | Rota | Acesso | Descrição |
@@ -224,7 +253,10 @@ Todas as rotas usam o usuário do token; o body leva só o perfil alvo: `{ "prof
 | PATCH | `/admin/users/:id/ban` | 👑 | Bane (desativa e invalida o refresh token) |
 | PATCH | `/admin/users/:id/unban` | 👑 | Reativa |
 | PATCH | `/admin/users/:id/verify` | 👑 | Marca como verificado |
+| PATCH | `/admin/users/:id/premium` | 👑 | Concede ou remove premium `{ premium: true \| false }` |
 | DELETE | `/admin/users/:id` | 👑 | Remove o usuário |
+| GET | `/admin/reports?status=&limit=&skip=` | 👑 | Lista denúncias (`open`, `reviewed`, `dismissed`) com denunciante e denunciado |
+| PATCH | `/admin/reports/:id` | 👑 | Revisa a denúncia `{ status: "reviewed" \| "dismissed" }` |
 
 ### Outros
 
@@ -258,6 +290,14 @@ socket.on('received_message', message => {}); // confirmação para quem enviou
 socket.emit('view_messages', { conversationId, limit: 50, skip: 0 });
 socket.on('view_messages', ({ messageHistory }) => {});
 
+// "digitando…" (mande true ao começar e false ao parar ou enviar)
+socket.emit('typing', { conversationId, isTyping: true });
+socket.on('typing', ({ userId, isTyping }) => {});
+
+// Confirmação de leitura: ao abrir a conversa e a cada mensagem recebida nela
+socket.emit('mark_read', { conversationId });
+socket.on('messages_read', ({ userId, readAt }) => {}); // o outro leu as minhas mensagens
+
 socket.emit('leave_conversation', { conversationId });
 ```
 
@@ -267,11 +307,15 @@ socket.emit('leave_conversation', { conversationId });
 | `leave_conversation` | `{ conversationId }` | `left_conversation` |
 | `send_message` | `{ conversationId, content }` | `new_message` (sala), `notification` (outro participante), `received_message` (remetente) ou `send_message_error` |
 | `view_messages` | `{ conversationId, limit?, skip? }` | `view_messages` ou `view_messages_error` |
+| `typing` | `{ conversationId, isTyping }` | `typing` para os outros da sala, ou `typing_error` |
+| `mark_read` | `{ conversationId }` | `messages_read` para a sala (se algo mudou), `marked_read` `{ count }` para quem marcou, ou `mark_read_error` |
 
 - O `userId` **sempre** vem do token (nunca do payload do cliente).
 - Só participantes de uma conversa **ativa** entram na sala ou mandam mensagens.
 - Presença: `online:<userId>` e `socket:<socketId>` ficam no Redis e são removidos no disconnect.
 - **CORS:** o mesmo do HTTP, definido por `CORS_ORIGINS` (aplicado pelo `CorsIoAdapter`, em `src/config/cors.config.ts`). Apps nativos não enviam `Origin` e não são afetados. Em produção, defina `CORS_ORIGINS` se houver cliente web.
+- `typing` e `mark_read` exigem ter entrado na sala (`join_conversation`, que já confere a participação). Assim não há consulta ao banco a cada tecla digitada.
+- Cada mensagem tem `readAt` (`null` até o outro participante ler).
 
 ## Regras de negócio
 
@@ -280,6 +324,8 @@ socket.emit('leave_conversation', { conversationId });
 - **Unlike**: remove o like e, se houver match, desfaz o match nos dois perfis e **arquiva** a conversa (`isActive: false`, `archivedAt`). Conversas arquivadas não recebem mensagens.
 - **Pass**: o perfil vai para `passedProfiles` e não aparece mais no feed. Curtir depois desfaz o pass.
 - **Feed**: até 50 perfis ativos dentro de `preferences.distance` km (padrão 10 km, aceita `"50"` ou `"50km"`) e de `preferences.ageRange`, excluindo eu mesmo, quem eu curti, passei ou dei match. Os resultados vêm ordenados por distância e com o campo `distance` (em metros). E-mail, telefone e as listas internas não aparecem.
+  - **Gênero (todos, mútuo):** só aparecem pessoas cujo `gender` está no meu `showMe` **e** cujo `showMe` inclui o meu gênero. `showMe` vazio ou `"everyone"` não restringe. Valores: `women` ↔ `Female`, `men` ↔ `Male`, `non-binary` ↔ `Non-binary`.
+  - **Filtros avançados (só premium, rígidos):** `verified`, `height` (faixa), `education` (contém o texto), `alcohol`, `smoking`, `children`, `zodiacSign`, `politicalView` e `religion` (exatos, sem diferenciar maiúsculas). Quem não bate, ou não preencheu o campo filtrado, sai do feed. Para usuários sem premium, os filtros ficam salvos mas não são aplicados.
 - **Atualização de usuário**: `PUT /users/:id` ignora campos protegidos (`premium`, `verified`, `active`, `refreshToken`, `matches`, `likedProfiles`, `likedYouProfiles`, `conversations`). A `ValidationPipe` global usa `whitelist: true` e descarta qualquer campo fora do DTO.
 
 ## Testes

@@ -6,12 +6,14 @@ import { Admin } from "./admin.schema";
 import { CryptModule } from "@/security/crypt.module";
 import { AdminController } from "./admin.controller";
 import { UserModule } from "@/user/user.module";
+import { SafetyModule } from "@/safety/safety.module";
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Admin.name, schema: AdminSchema }]),
     CryptModule,
     UserModule,
+    SafetyModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],
