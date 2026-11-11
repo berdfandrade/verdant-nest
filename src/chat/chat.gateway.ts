@@ -34,9 +34,8 @@ export interface SendMessagePayload extends ConversationPayload {
 export const userRoom = (userId: string) => `user:${userId}`;
 export const conversationRoom = (conversationId: string) => `conversation:${conversationId}`;
 
-@WebSocketGateway({
-	cors: { origin: '*' },
-})
+// CORS: definido por CORS_ORIGINS via CorsIoAdapter (src/config/cors.config.ts)
+@WebSocketGateway()
 export class ChatGateway implements GatewayConfig {
 	constructor(
 		private readonly chatService: ChatService,

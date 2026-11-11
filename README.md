@@ -112,6 +112,7 @@ Veja [`.env.example`](.env.example).
 | `ADMIN_SECRET_KEY` | – | Chave exigida no body para criar um admin (`POST /admin`) |
 | `RATE_LIMIT_ENABLED` | `true` (`false` em `NODE_ENV=test`) | Liga/desliga o rate limiting |
 | `TRUST_PROXY` | – | Atrás de proxy/load balancer: número de proxies confiáveis (o IP real vem do `X-Forwarded-For`) |
+| `CORS_ORIGINS` | – | Origens de navegador liberadas (HTTP e WebSocket), separadas por vírgula. `*` libera todas. Sem a variável: tudo liberado em dev, **nada** liberado em produção |
 
 > ⚠️ Os valores padrão dos secrets servem só para desenvolvimento. **Sempre** defina secrets próprios em produção.
 
@@ -270,6 +271,7 @@ socket.emit('leave_conversation', { conversationId });
 - O `userId` **sempre** vem do token (nunca do payload do cliente).
 - Só participantes de uma conversa **ativa** entram na sala ou mandam mensagens.
 - Presença: `online:<userId>` e `socket:<socketId>` ficam no Redis e são removidos no disconnect.
+- **CORS:** o mesmo do HTTP, definido por `CORS_ORIGINS` (aplicado pelo `CorsIoAdapter`, em `src/config/cors.config.ts`). Apps nativos não enviam `Origin` e não são afetados. Em produção, defina `CORS_ORIGINS` se houver cliente web.
 
 ## Regras de negócio
 

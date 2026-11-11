@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { AppModule } from '@/app.module';
 import { validationPipeConfig } from '@/config/validation-pipe.config';
+import { configureCors } from '@/config/cors.config';
 
 /*
   Sobe a aplicação inteira (AppModule) para os testes.
@@ -24,6 +25,7 @@ export async function SetupTestApp() {
 
   const app = moduleFixture.createNestApplication();
   validationPipeConfig(app);
+  configureCors(app);
   await app.init();
 
   return {
