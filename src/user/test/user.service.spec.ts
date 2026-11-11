@@ -65,6 +65,13 @@ describe('🧑 UserService', () => {
 			expect(user.username).toBe(mockUser.username);
 		});
 
+		it('should save the gender (used by the feed filters)', async () => {
+			const user = await userService.create(mockUser);
+			const saved = await userModel.findById(user.id).lean();
+
+			expect(saved?.gender).toBe(mockUser.gender);
+		});
+
 		it('should create a user without location (sent later by the app)', async () => {
 			const { location, ...withoutLocation } = mockUser;
 			const user = await userService.create(withoutLocation);

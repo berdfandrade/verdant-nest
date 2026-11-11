@@ -5,6 +5,7 @@ import { User, UserModel, USER_PRIVATE_FIELDS } from '@/user/user.schema';
 import { UpdatePreferencesDto } from '@/user/dto/update-preferences.dto';
 import { UpdateAboutDto } from '@/user/dto/update-about.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { advancedFilterConditions, genderConditions } from './feed-filters';
 
 /*
     ProfileService:
@@ -87,7 +88,15 @@ export class ProfileService {
 		const birthDateRange = birthDateRangeFromAges(minAge, maxAge);
 		if (Object.keys(birthDateRange).length) query.birthDate = birthDateRange;
 
-		// TODO: advancedFilters (verified, altura, educação...) ainda não são aplicados no feed
+		// Gênero (mútuo, para todos)
+		const andConditions = genderConditions(myProfile);
+
+		// Filtros avançados: rígidos, só para premium
+		if (myProfile.premium) {
+			Object.assign(query, advancedFilterConditions(myProfile.preferences?.advancedFilters));
+		}
+
+		if (andConditions.length) query.$and = andConditions;
 
 		const nearbyUsers = await this.userModel.aggregate([
 			{
