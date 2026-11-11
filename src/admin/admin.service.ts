@@ -67,6 +67,10 @@ export class AdminService {
     return this.userService.setStatus(id, { verified: true });
   }
 
+  async setPremium(id: Types.ObjectId, premium: boolean) {
+    return this.userService.setStatus(id, { premium });
+  }
+
   async deleteUser(id: Types.ObjectId) {
     await this.userService.deleteUser(id);
     return { message: 'User deleted' };

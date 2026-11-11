@@ -126,6 +126,14 @@ export class User extends Document {
 	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], default: [] })
 	passedProfiles: Types.ObjectId[];
 
+	// Quem me deu super like (aparece em destaque em "curtiram você")
+	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], default: [] })
+	superLikedBy: Types.ObjectId[];
+
+	// Quando usei meus super likes (limite diário, janela de 24h)
+	@Prop({ type: [Date], default: [] })
+	superLikeHistory: Date[];
+
 	@Prop({
 		type: {
 			ageRange: [Number],
