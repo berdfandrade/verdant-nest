@@ -64,6 +64,28 @@ export class MessagesService {
 		return { deleted: true };
 	}
 
+	// Marca como lidas as mensagens da conversa que eu recebi
+	async markConversationRead(conversationId: Types.ObjectId | string, readerId: Types.ObjectId | string) {
+		const readAt = new Date();
+		const { modifiedCount } = await this.messageModel.updateMany(
+			{
+				conversationId: MongoDbUtils.toObjectId(conversationId),
+				sender: { $ne: MongoDbUtils.toObjectId(readerId) },
+				readAt: null,
+			},
+			{ $set: { readAt } },
+		);
+		return { conversationId: String(conversationId), readAt, count: modifiedCount };
+	}
+
+	async countUnread(conversationId: Types.ObjectId | string, userId: Types.ObjectId | string) {
+		return this.messageModel.countDocuments({
+			conversationId: MongoDbUtils.toObjectId(conversationId),
+			sender: { $ne: MongoDbUtils.toObjectId(userId) },
+			readAt: null,
+		});
+	}
+
 	// Busca por texto. Se conversationId for passado, busca só dentro da conversa
 	async searchMessage(query: string, conversationId?: Types.ObjectId | string): Promise<Message[]> {
 		const filter: Record<string, any> = {

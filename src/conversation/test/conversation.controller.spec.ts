@@ -191,4 +191,56 @@ describe('ConversationController (e2e)', () => {
 		expect(response.status).toBe(401);
 		expect(await conversationModel.findById(conversation.id)).not.toBeNull();
 	});
+
+	it('GET /conversations/me should include the unread count', async () => {
+		const user = await userService.create(mockUser);
+		const maria = await userService.create(mockUserMaria);
+		const { access_token } = await authService.validateAndLogin(CREDENTIALS)
+
+		const conversation = await conversationService.create({ participants: [user.id, maria.id] });
+		await messagesService.create({ sender: maria.id, conversationId: conversation.id, content: 'Oi!' });
+		await messagesService.create({ sender: maria.id, conversationId: conversation.id, content: 'Sumiu?' });
+		await messagesService.create({ sender: user.id, conversationId: conversation.id, content: 'Opa!' });
+
+		const response = await request(app.getHttpServer())
+			.get('/conversations/me')
+			.set('Authorization', `Bearer ${access_token}`);
+
+		expect(response.body[0].unreadCount).toBe(2);
+	});
+
+	it('POST /conversations/:id/read should mark my received messages as read', async () => {
+		const user = await userService.create(mockUser);
+		const maria = await userService.create(mockUserMaria);
+		const { access_token } = await authService.validateAndLogin(CREDENTIALS)
+
+		const conversation = await conversationService.create({ participants: [user.id, maria.id] });
+		await messagesService.create({ sender: maria.id, conversationId: conversation.id, content: 'Oi!' });
+
+		const response = await request(app.getHttpServer())
+			.post(`/conversations/${conversation.id}/read`)
+			.set('Authorization', `Bearer ${access_token}`);
+
+		expect(response.status).toBe(200);
+		expect(response.body.count).toBe(1);
+
+		const list = await request(app.getHttpServer())
+			.get('/conversations/me')
+			.set('Authorization', `Bearer ${access_token}`);
+		expect(list.body[0].unreadCount).toBe(0);
+	});
+
+	it('POST /conversations/:id/read should return 403 for a conversation I am not in', async () => {
+		await userService.create(mockUser);
+		const { access_token } = await authService.validateAndLogin(CREDENTIALS)
+		const conversation = await conversationService.create({
+			participants: [new mongoose.Types.ObjectId(), new mongoose.Types.ObjectId()],
+		});
+
+		const response = await request(app.getHttpServer())
+			.post(`/conversations/${conversation.id}/read`)
+			.set('Authorization', `Bearer ${access_token}`);
+
+		expect(response.status).toBe(403);
+	});
 });

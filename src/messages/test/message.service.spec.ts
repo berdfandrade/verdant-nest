@@ -292,4 +292,24 @@ describe('📩 MessageService', () => {
 		const result = await messagesService.searchMessage('.*');
 		expect(result.length).toBe(0);
 	});
+
+	it('Should mark as read only the messages I received', async () => {
+		const user1 = await userService.create(mockUser);
+		const user2 = await userService.create(mockUserMaria);
+		const conversation = await conversationService.create({ participants: [user1.id, user2.id] });
+
+		await messagesService.create({ sender: user2.id, conversationId: conversation.id, content: 'Oi' });
+		await messagesService.create({ sender: user2.id, conversationId: conversation.id, content: 'Tudo bem?' });
+		await messagesService.create({ sender: user1.id, conversationId: conversation.id, content: 'Tudo!' });
+
+		expect(await messagesService.countUnread(conversation.id, user1.id)).toBe(2);
+		expect(await messagesService.countUnread(conversation.id, user2.id)).toBe(1);
+
+		const result = await messagesService.markConversationRead(conversation.id, user1.id);
+
+		expect(result.count).toBe(2);
+		expect(await messagesService.countUnread(conversation.id, user1.id)).toBe(0);
+		// O que o user1 enviou continua não lido pelo user2
+		expect(await messagesService.countUnread(conversation.id, user2.id)).toBe(1);
+	});
 });

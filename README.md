@@ -195,7 +195,8 @@ Todas as rotas usam o usuário do token; o body leva só o perfil alvo: `{ "prof
 
 | Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
-| GET | `/conversations/me` | 🔑 | Minhas conversas ativas com a última mensagem |
+| GET | `/conversations/me` | 🔑 | Minhas conversas ativas com a última mensagem e `unreadCount` |
+| POST | `/conversations/:id/read` | 🔑 participante | Marca como lidas as mensagens que recebi (em tempo real, prefira o evento `mark_read`) |
 | GET | `/conversations/:id` | 🔑 participante | Detalhe da conversa |
 | GET | `/conversations/:id/messages?limit=&skip=` | 🔑 participante | Histórico paginado (mais recentes primeiro, `limit` máx. 100) |
 | GET | `/conversations/between/users?user1=&user2=` | 🔑 | Conversa ativa entre dois usuários (você precisa ser um deles) |
@@ -257,6 +258,14 @@ socket.on('received_message', message => {}); // confirmação para quem enviou
 socket.emit('view_messages', { conversationId, limit: 50, skip: 0 });
 socket.on('view_messages', ({ messageHistory }) => {});
 
+// "digitando…" (mande true ao começar e false ao parar ou enviar)
+socket.emit('typing', { conversationId, isTyping: true });
+socket.on('typing', ({ userId, isTyping }) => {});
+
+// Confirmação de leitura: ao abrir a conversa e a cada mensagem recebida nela
+socket.emit('mark_read', { conversationId });
+socket.on('messages_read', ({ userId, readAt }) => {}); // o outro leu as minhas mensagens
+
 socket.emit('leave_conversation', { conversationId });
 ```
 
@@ -266,10 +275,14 @@ socket.emit('leave_conversation', { conversationId });
 | `leave_conversation` | `{ conversationId }` | `left_conversation` |
 | `send_message` | `{ conversationId, content }` | `new_message` (sala), `notification` (outro participante), `received_message` (remetente) ou `send_message_error` |
 | `view_messages` | `{ conversationId, limit?, skip? }` | `view_messages` ou `view_messages_error` |
+| `typing` | `{ conversationId, isTyping }` | `typing` para os outros da sala, ou `typing_error` |
+| `mark_read` | `{ conversationId }` | `messages_read` para a sala (se algo mudou), `marked_read` `{ count }` para quem marcou, ou `mark_read_error` |
 
 - O `userId` **sempre** vem do token (nunca do payload do cliente).
 - Só participantes de uma conversa **ativa** entram na sala ou mandam mensagens.
 - Presença: `online:<userId>` e `socket:<socketId>` ficam no Redis e são removidos no disconnect.
+- `typing` e `mark_read` exigem ter entrado na sala (`join_conversation`, que já confere a participação). Assim não há consulta ao banco a cada tecla digitada.
+- Cada mensagem tem `readAt` (`null` até o outro participante ler).
 
 ## Regras de negócio
 

@@ -14,6 +14,7 @@ import {
 import { ConversationService } from '@/conversation/conversation.service';
 import { Types } from 'mongoose';
 import { AuthService } from '@/auth/auth.service';
+import { MessagesService } from '@/messages/messages.service';
 
 /*
 	Fluxo do cliente:
@@ -21,6 +22,12 @@ import { AuthService } from '@/auth/auth.service';
 	2. emit('join_conversation', { conversationId })
 	3. emit('send_message', { conversationId, content })
 	4. Escuta 'new_message' (todos da conversa) e 'notification' (quando não está na sala)
+	5. emit('typing', { conversationId, isTyping }) -> os outros recebem 'typing'
+	6. emit('mark_read', { conversationId }) ao abrir a conversa ou receber mensagem
+	   -> o remetente recebe 'messages_read' (confirmação de leitura)
+
+	`typing` e `mark_read` exigem ter entrado na sala (join_conversation já checa
+	se o usuário participa), o que evita ir ao banco a cada tecla digitada.
 */
 
 export interface ConversationPayload {
@@ -29,6 +36,10 @@ export interface ConversationPayload {
 
 export interface SendMessagePayload extends ConversationPayload {
 	content: string;
+}
+
+export interface TypingPayload extends ConversationPayload {
+	isTyping: boolean;
 }
 
 export const userRoom = (userId: string) => `user:${userId}`;
@@ -42,6 +53,7 @@ export class ChatGateway implements GatewayConfig {
 		private readonly chatService: ChatService,
 		private readonly conversationService: ConversationService,
 		private readonly authService: AuthService,
+		private readonly messagesService: MessagesService,
 	) {}
 
 	private logger = new Logger('ChatGateway');
@@ -129,6 +141,51 @@ export class ChatGateway implements GatewayConfig {
 		});
 
 		client.emit('left_conversation', { conversationId: data.conversationId });
+	}
+
+	// Só quem entrou na sala da conversa pode emitir eventos dela
+	private isInConversation(client: Socket, conversationId: string, errorEvent: string) {
+		if (!this.isValidConversation(client, conversationId, errorEvent)) return false;
+		if (!client.rooms?.has(conversationRoom(conversationId))) {
+			client.emit(errorEvent, { message: 'Join the conversation first' });
+			return false;
+		}
+		return true;
+	}
+
+	@SubscribeMessage('typing')
+	handleTyping(@MessageBody() data: TypingPayload, @ConnectedSocket() client: Socket) {
+		if (!this.isInConversation(client, data?.conversationId, 'typing_error')) return;
+
+		// Para os outros da sala (não volta para quem está digitando)
+		client.to(conversationRoom(data.conversationId)).emit('typing', {
+			conversationId: data.conversationId,
+			userId: client.data.userId,
+			isTyping: !!data.isTyping,
+		});
+	}
+
+	@SubscribeMessage('mark_read')
+	async handleMarkRead(@MessageBody() data: ConversationPayload, @ConnectedSocket() client: Socket) {
+		if (!this.isInConversation(client, data?.conversationId, 'mark_read_error')) return;
+
+		try {
+			const result = await this.messagesService.markConversationRead(data.conversationId, client.data.userId);
+
+			// Só avisa o remetente se alguma mensagem mudou de estado
+			if (result.count > 0) {
+				this.server.to(conversationRoom(data.conversationId)).emit('messages_read', {
+					conversationId: data.conversationId,
+					userId: client.data.userId,
+					readAt: result.readAt,
+				});
+			}
+
+			client.emit('marked_read', { conversationId: data.conversationId, count: result.count });
+		} catch (error) {
+			this.logger.error('Error on mark_read', error);
+			client.emit('mark_read_error', { message: 'Error marking messages as read' });
+		}
 	}
 
 	@SubscribeMessage('view_messages')
