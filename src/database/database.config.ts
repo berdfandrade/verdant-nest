@@ -1,4 +1,5 @@
-
 export const DatabaseConfig = {
-  DATABASE_URI: process.env.MONGO_URI || "mongodb://localhost:27017/verdant"
+	get DATABASE_URI() {
+		return process.env.MONGO_URI || 'mongodb://localhost:27017/verdant';
+	},
 };

@@ -72,6 +72,28 @@ describe('🔐 AuthService', () => {
 			);
 		});
 
+		it('should also return a refresh token', async () => {
+			const hashedPassword = await cryptService.hashPassword(mockUser.password);
+			await userModel.create({ ...mockUser, password: hashedPassword });
+
+			const result = await authService.validateAndLogin({
+				email: mockUser.email,
+				password: mockUser.password,
+			});
+
+			expect(result.refresh_token).toEqual(expect.any(String));
+		});
+
+		it('should throw UnauthorizedException if user is disabled', async () => {
+			const hashedPassword = await cryptService.hashPassword(mockUser.password);
+			await userModel.create({ ...mockUser, password: hashedPassword, active: false });
+
+			const authDto: AuthDto = { email: mockUser.email, password: mockUser.password };
+			await expect(authService.validateAndLogin(authDto)).rejects.toThrow(
+				UnauthorizedException,
+			);
+		});
+
 		it('should throw UnauthorizedException if password is invalid', async () => {
 			const hashedPassword = await cryptService.hashPassword(mockUser.password);
 			await userModel.create({ ...mockUser, password: hashedPassword });
@@ -97,6 +119,73 @@ describe('🔐 AuthService', () => {
 
 			const updatedUser = await userModel.findById(createdUser._id);
 			expect(updatedUser?.refreshToken).toBeDefined();
+		});
+	});
+
+	describe('♻️ refreshTokens', () => {
+		it('should return a new pair of tokens for a valid refresh token', async () => {
+			await userService.create(mockUser);
+			const { refresh_token } = await authService.validateAndLogin({
+				email: mockUser.email,
+				password: mockUser.password,
+			});
+
+			const result = await authService.refreshTokens(refresh_token);
+
+			expect(result.access_token).toEqual(expect.any(String));
+			expect(result.refresh_token).toEqual(expect.any(String));
+			await expect(authService.verifyToken(result.access_token)).resolves.toMatchObject({
+				email: mockUser.email,
+			});
+		});
+
+		it('should not accept the same refresh token twice (rotation)', async () => {
+			await userService.create(mockUser);
+			const { refresh_token } = await authService.validateAndLogin({
+				email: mockUser.email,
+				password: mockUser.password,
+			});
+
+			await authService.refreshTokens(refresh_token);
+
+			await expect(authService.refreshTokens(refresh_token)).rejects.toThrow(
+				UnauthorizedException,
+			);
+		});
+
+		it('should reject an access token used as refresh token', async () => {
+			await userService.create(mockUser);
+			const { access_token } = await authService.validateAndLogin({
+				email: mockUser.email,
+				password: mockUser.password,
+			});
+
+			await expect(authService.refreshTokens(access_token)).rejects.toThrow(
+				UnauthorizedException,
+			);
+		});
+
+		it('should reject the refresh token after logout', async () => {
+			const user = await userService.create(mockUser);
+			const { refresh_token } = await authService.validateAndLogin({
+				email: mockUser.email,
+				password: mockUser.password,
+			});
+
+			const response = await authService.logout(user.id);
+			expect(response.message).toBe('Logout successful');
+
+			await expect(authService.refreshTokens(refresh_token)).rejects.toThrow(
+				UnauthorizedException,
+			);
+		});
+	});
+
+	describe('🚪 logout', () => {
+		it('should say already logged out if there is no refresh token', async () => {
+			const user = await userService.create(mockUser);
+			const response = await authService.logout(user.id);
+			expect(response.message).toBe('Already logged out');
 		});
 	});
 });

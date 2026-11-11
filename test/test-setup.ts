@@ -1,26 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { MongooseModule } from '@nestjs/mongoose';
 import { AppModule } from '../src/app.module';
+import { validationPipeConfig } from '../src/config/validation-pipe.config';
 
+/*
+  Sobe a aplicação inteira (AppModule) para os testes.
+
+  Em NODE_ENV=test o banco é um MongoMemoryServer: a URI é colocada em
+  MONGO_URI ANTES de compilar o módulo, assim o DatabaseModule conecta nele
+  (uma única conexão) e os testes nunca tocam no banco real.
+*/
 export async function SetupTestApp() {
   let mongoServer;
-  let mongoUri;
 
   if (process.env.NODE_ENV === 'test') {
     mongoServer = await MongoMemoryServer.create();
-    mongoUri = mongoServer.getUri();
-  } else {
-    mongoUri = process.env.MONGO_URI;
+    process.env.MONGO_URI = mongoServer.getUri();
   }
 
   const moduleFixture: TestingModule = await Test.createTestingModule({
-    imports: [MongooseModule.forRoot(mongoUri), AppModule],
+    imports: [AppModule],
   }).compile();
 
   const app = moduleFixture.createNestApplication();
-  app.useGlobalPipes(new ValidationPipe());
+  validationPipeConfig(app);
   await app.init();
 
   return {

@@ -1,11 +1,11 @@
-import { Types, Model } from 'mongoose';
-import { ForbiddenException, Injectable, NotFoundException, Type } from '@nestjs/common';
+import { Types } from 'mongoose';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConversationService } from '../conversation/conversation.service';
 import { RedisService } from '../redis/redis.service';
-import { Message, MessageDocument } from '../messages/message.schema';
+import { Message } from '../messages/message.schema';
+import { Conversation } from '../conversation/schemas/conversation.schema';
 import { MessagesService } from '../messages/messages.service';
-import { Socket } from 'socket.io';
-import { JwtService } from '@nestjs/jwt';
+import MongoDbUtils from '../utils/MongoDB.utils';
 
 export interface ChatConnection {
 	socketId: string;
@@ -26,11 +26,13 @@ export interface EnterTheConversation {
 export interface MessageResponse {
 	delivered: boolean;
 	sentAt: Date;
+	message?: Message;
+	conversation?: Conversation;
 }
 
 export interface SendMessage {
-	sender: Types.ObjectId;
-	conversationId: Types.ObjectId;
+	sender: Types.ObjectId | string;
+	conversationId: Types.ObjectId | string;
 	content: string;
 }
 
@@ -46,13 +48,18 @@ export class ChatService {
 		const conversation = await this.conversationService.findById(conversationId);
 		if (!conversation) throw new NotFoundException('Conversation not found');
 
-		const isParticipant = conversation.participants.some(p => p.equals(sender));
+		const isParticipant = this.conversationService.isParticipant(conversation, sender);
 		if (!isParticipant) throw new ForbiddenException('User not in conversation');
 
-		const newMessage = { sender, conversationId, content, sentAt: new Date() };
-		await this.messageService.create(newMessage);
+		const newMessage = {
+			sender: MongoDbUtils.toObjectId(sender),
+			conversationId: MongoDbUtils.toObjectId(conversationId),
+			content,
+			sentAt: new Date(),
+		};
+		const message = await this.messageService.create(newMessage);
 
-		return { delivered: true, sentAt: newMessage.sentAt };
+		return { delivered: true, sentAt: newMessage.sentAt, message, conversation };
 	}
 
 	async chatHistory(conversationId: Types.ObjectId) {
@@ -74,7 +81,7 @@ export class ChatService {
 	}
 
 	/**
-	 * @deprecated Use `newFunction()` instead.
+	 * @deprecated As salas agora são as próprias conversas (evento `join_conversation` no gateway).
 	*/
 	async createRoom(conversationId: Types.ObjectId) {
 		const conversation = await this.conversationService.findById(conversationId);
@@ -86,16 +93,40 @@ export class ChatService {
 
 
 
-	async userIsAllowed(myProfileId: Types.ObjectId, conversationId: Types.ObjectId) {
+	async userIsAllowed(
+		myProfileId: Types.ObjectId | string,
+		conversationId: Types.ObjectId | string,
+	): Promise<boolean> {
 		try {
 			const conversation = await this.conversationService.findById(conversationId);
-			if (!conversation) throw new NotFoundException('Conversation not found');
-			const isParticipant = conversation.participants.some(p => p.equals(myProfileId));
-			if (!isParticipant) throw new NotFoundException('User not in this conversation');
-			return true;
-		} catch (error) {
-			console.error('Error on autheticate user', error);
+			return conversation.isActive && this.conversationService.isParticipant(conversation, myProfileId);
+		} catch {
+			return false;
 		}
+	}
+
+	// ---- Presença (online/offline) ----
+
+	async setOnline(userId: string, socketId: string) {
+		await this.redisService.setKey(`online:${userId}`, socketId);
+		await this.redisService.setKey(`socket:${socketId}`, userId);
+	}
+
+	async setOffline(socketId: string): Promise<string | null> {
+		const userId = await this.redisService.getKey<string>(`socket:${socketId}`);
+		await this.redisService.deleteKey(`socket:${socketId}`);
+
+		if (userId) {
+			// Só remove o online se ainda for o mesmo socket (o user pode ter reconectado)
+			const currentSocket = await this.redisService.getKey<string>(`online:${userId}`);
+			if (currentSocket === socketId) await this.redisService.deleteKey(`online:${userId}`);
+		}
+
+		return userId;
+	}
+
+	async isOnline(userId: string): Promise<boolean> {
+		return (await this.redisService.getKey(`online:${userId}`)) !== null;
 	}
 
 	async addConnection({ socketId, userId, conversationId }: ChatConnection) {

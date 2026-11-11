@@ -4,7 +4,11 @@ import { DatabaseConfig } from './database.config';
 
 @Global()
 @Module({
-	imports: [MongooseModule.forRoot(DatabaseConfig.DATABASE_URI)],
+	imports: [
+		MongooseModule.forRootAsync({
+			useFactory: () => ({ uri: DatabaseConfig.DATABASE_URI }),
+		}),
+	],
 	exports: [MongooseModule],
 })
 export class DatabaseModule {}

@@ -98,4 +98,68 @@ describe('🦜 ChatService', () => {
 		const isMember = await redisService.isMemberOfSet(`conversation:${conversation.id}`, mockSocketId);
 		expect(isMember).toBe(false);
 	});
+
+	describe('🟢 presence', () => {
+		it('should set a user online and offline by the socket id', async () => {
+			const userId = new mongoose.Types.ObjectId().toString();
+			const socketId = `test-socket-${Date.now()}`;
+
+			await chatService.setOnline(userId, socketId);
+			expect(await chatService.isOnline(userId)).toBe(true);
+
+			const removedUser = await chatService.setOffline(socketId);
+			expect(removedUser).toBe(userId);
+			expect(await chatService.isOnline(userId)).toBe(false);
+		});
+
+		it('should keep the user online if an old socket disconnects', async () => {
+			const userId = new mongoose.Types.ObjectId().toString();
+			const oldSocket = `old-socket-${Date.now()}`;
+			const newSocket = `new-socket-${Date.now()}`;
+
+			await chatService.setOnline(userId, oldSocket);
+			await chatService.setOnline(userId, newSocket); // reconectou
+
+			await chatService.setOffline(oldSocket);
+			expect(await chatService.isOnline(userId)).toBe(true);
+
+			await chatService.setOffline(newSocket);
+			expect(await chatService.isOnline(userId)).toBe(false);
+		});
+	});
+
+	describe('🔐 userIsAllowed', () => {
+		it('should allow only participants of an active conversation', async () => {
+			const user1 = await userService.create(mockUser as CreateUserDto);
+			const user2 = await userService.create(mockUserMaria as CreateUserDto);
+
+			const conversation = await conversationService.create({ participants: [user1.id, user2.id] });
+			const inactive = await conversationService.create({ participants: [user1.id, user2.id], isActive: false });
+
+			expect(await chatService.userIsAllowed(user1.id, conversation.id)).toBe(true);
+			expect(await chatService.userIsAllowed(new mongoose.Types.ObjectId(), conversation.id)).toBe(false);
+			expect(await chatService.userIsAllowed(user1.id, inactive.id)).toBe(false);
+			expect(await chatService.userIsAllowed(user1.id, new mongoose.Types.ObjectId())).toBe(false);
+		});
+	});
+
+	describe('✉️ sendMessage', () => {
+		it('should persist the message and return it', async () => {
+			const user1 = await userService.create(mockUser as CreateUserDto);
+			const user2 = await userService.create(mockUserMaria as CreateUserDto);
+			const conversation = await conversationService.create({ participants: [user1.id, user2.id] });
+
+			const result = await chatService.sendMessage({
+				sender: user1.id,
+				conversationId: conversation.id,
+				content: 'Oi pelo socket',
+			});
+
+			expect(result.delivered).toBe(true);
+			expect(result.message?.content).toBe('Oi pelo socket');
+
+			const history = await conversationService.getMessages(conversation.id);
+			expect(history.length).toBe(1);
+		});
+	});
 });
