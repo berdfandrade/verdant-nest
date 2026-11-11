@@ -4,7 +4,7 @@ import { MessagesService } from '../messages.service';
 import { Model, Types } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { SendMessageDto } from '../dto/send-message.dto';
-import { INestApplication } from '@nestjs/common';
+import { ForbiddenException, INestApplication, NotFoundException } from '@nestjs/common';
 import { SetupTestApp } from '../../../test/test-setup';
 import { Conversation } from '../../conversation/schemas/conversation.schema';
 import { Message } from '../message.schema';
@@ -166,6 +166,130 @@ describe('📩 MessageService', () => {
 		const searchMessage = await messagesService.searchMessage('Olá');
 
 		expect(searchMessage[0].content).toBe(message1.content);
-		expect(searchMessage[0].sender).toBe(message1.sender);
+		expect(searchMessage[0].sender.toString()).toBe(message1.sender);
+	});
+
+	it('Should not let a non participant send a message', async () => {
+		const user1 = await userService.create(mockUser);
+		const user2 = await userService.create(mockUserMaria);
+
+		const conversation = await conversationService.create({ participants: [user1.id, user2.id] });
+
+		await expect(
+			messagesService.create({
+				sender: new Types.ObjectId(),
+				conversationId: conversation.id,
+				content: 'Intruso',
+				sentAt: new Date(),
+			}),
+		).rejects.toThrow(ForbiddenException);
+	});
+
+	it('Should not send messages to an inactive conversation', async () => {
+		const user1 = await userService.create(mockUser);
+		const user2 = await userService.create(mockUserMaria);
+
+		const conversation = await conversationService.create({
+			participants: [user1.id, user2.id],
+			isActive: false,
+		});
+
+		await expect(
+			messagesService.create({
+				sender: user1.id,
+				conversationId: conversation.id,
+				content: 'Oi?',
+				sentAt: new Date(),
+			}),
+		).rejects.toThrow(ForbiddenException);
+	});
+
+	it('Should not modify a message from another sender', async () => {
+		const user1 = await userService.create(mockUser);
+		const user2 = await userService.create(mockUserMaria);
+
+		const conversation = await conversationService.create({ participants: [user1.id, user2.id] });
+		const message = await messagesService.create({
+			sender: user1.id,
+			conversationId: conversation.id,
+			content: 'Original',
+			sentAt: new Date(),
+		});
+
+		await expect(
+			messagesService.modifyMessage({
+				messageId: message.id,
+				sender: user2.id,
+				content: 'Editada pela outra pessoa',
+			}),
+		).rejects.toThrow(NotFoundException);
+	});
+
+	it('Should set editedAt when a message is modified', async () => {
+		const user1 = await userService.create(mockUser);
+		const user2 = await userService.create(mockUserMaria);
+
+		const conversation = await conversationService.create({ participants: [user1.id, user2.id] });
+		const message = await messagesService.create({
+			sender: user1.id,
+			conversationId: conversation.id,
+			content: 'Original',
+			sentAt: new Date(),
+		});
+
+		const modified = await messagesService.modifyMessage({
+			messageId: message.id,
+			sender: user1.id,
+			content: 'Editada',
+		});
+
+		expect(modified.editedAt).toBeInstanceOf(Date);
+	});
+
+	it('Should delete a message and remove it from the conversation', async () => {
+		const user1 = await userService.create(mockUser);
+		const user2 = await userService.create(mockUserMaria);
+
+		const conversation = await conversationService.create({ participants: [user1.id, user2.id] });
+		const message = await messagesService.create({
+			sender: user1.id,
+			conversationId: conversation.id,
+			content: 'Vou apagar',
+			sentAt: new Date(),
+		});
+
+		const response = await messagesService.deleteMessage(message.id, user1.id);
+		expect(response.deleted).toBe(true);
+
+		expect(await messageModel.findById(message.id)).toBeNull();
+		const updatedConversation = await conversationModel.findById(conversation.id);
+		expect(updatedConversation?.messages.length).toBe(0);
+	});
+
+	it('Should search only inside the given conversation', async () => {
+		const user1 = await userService.create(mockUser);
+		const user2 = await userService.create(mockUserMaria);
+
+		const conversationA = await conversationService.create({ participants: [user1.id, user2.id] });
+		const conversationB = await conversationService.create({ participants: [user1.id, user2.id] });
+
+		await messagesService.create({ sender: user1.id, conversationId: conversationA.id, content: 'Bom dia', sentAt: new Date() });
+		await messagesService.create({ sender: user1.id, conversationId: conversationB.id, content: 'Bom dia também', sentAt: new Date() });
+
+		const result = await messagesService.searchMessage('bom dia', conversationA.id);
+
+		expect(result.length).toBe(1);
+		expect(result[0].conversationId.toString()).toBe(conversationA.id);
+	});
+
+	it('Should treat the search text literally (no regex injection)', async () => {
+		const user1 = await userService.create(mockUser);
+		const user2 = await userService.create(mockUserMaria);
+
+		const conversation = await conversationService.create({ participants: [user1.id, user2.id] });
+		await messagesService.create({ sender: user1.id, conversationId: conversation.id, content: 'Qualquer coisa', sentAt: new Date() });
+
+		const result = await messagesService.searchMessage('.*');
+		expect(result.length).toBe(0);
 	});
 });

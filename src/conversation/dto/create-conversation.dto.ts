@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { Types } from 'mongoose';
 import {
 	IsArray,
@@ -8,10 +7,11 @@ import {
 	IsNotEmpty,
 	IsOptional,
 	ValidateNested,
-	IsString
+	IsString,
+	ArrayMinSize,
+	ArrayMaxSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ObjectId } from 'mongoose';
 
 export class CreateMessageDto {
   @IsMongoId()
@@ -29,6 +29,9 @@ export class CreateMessageDto {
 
 export class CreateConversationDto {
 	@IsArray()
+	@ArrayMinSize(2)
+	@ArrayMaxSize(2)
+	@IsMongoId({ each: true })
 	participants: Types.ObjectId[];
 
 	@IsOptional()

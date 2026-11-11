@@ -1,16 +1,16 @@
-import { Controller, Body, Post, HttpCode, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Body, Post, HttpCode, Get, UseGuards } from '@nestjs/common';
 import { User } from './decorators/user.decorator';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminOnly } from './decorators/admin-only-decorator';
 
-import { SelfOnly } from './decorators/self-only.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
-
 @ApiTags('🔒 Auth')
+@ApiBearerAuth()
 @Controller('login')
 export class AuthController {
 	constructor(private authService: AuthService) {}
@@ -18,7 +18,20 @@ export class AuthController {
 	@Post()
 	@HttpCode(200)
 	async login(@Body() authDto: AuthDto) {
-		return this.authService.validateAndLogin(authDto)
+		return this.authService.validateAndLogin(authDto);
+	}
+
+	@Post('refresh')
+	@HttpCode(200)
+	async refresh(@Body() dto: RefreshTokenDto) {
+		return this.authService.refreshTokens(dto.refresh_token);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Post('logout')
+	@HttpCode(200)
+	async logout(@User() user: any) {
+		return this.authService.logout(user.id);
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -28,13 +41,14 @@ export class AuthController {
 	}
 
 	@Post('admin')
-	async adminLogin(@Body() authDto : AuthDto) {
-		return this.authService.adminLogin(authDto)
+	@HttpCode(200)
+	async adminLogin(@Body() authDto: AuthDto) {
+		return this.authService.adminLogin(authDto);
 	}
 
 	@AdminOnly()
 	@Get('hello')
 	async getHello() {
-		return 'Hello from Guard'
+		return 'Hello from Guard';
 	}
 }

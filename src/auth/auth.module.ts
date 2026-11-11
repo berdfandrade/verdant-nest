@@ -6,7 +6,6 @@ import { JwtModule } from "@nestjs/jwt";
 import { JwtStrategy } from "./jwt.strategy";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { PassportModule } from "@nestjs/passport";
-import { CryptService } from "../security/crypt.service";
 import { CryptModule } from "../security/crypt.module";
 import {JwtConfig } from "../config/jwt.config";
 import { AdminModule } from "../admin/admin.module";
@@ -17,13 +16,15 @@ import { AdminJwtGuard } from "./admin-jwt.guard";
 @Module({
   imports: [
     PassportModule,
-    JwtModule.register(JwtConfig),
+    JwtModule.registerAsync({
+      useFactory: () => ({ secret: JwtConfig.secret, signOptions: JwtConfig.signOptions }),
+    }),
     UserModule,
     CryptModule,
     AdminModule,
   ],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, CryptService, AdminAuthProvider, AdminJwtGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, AdminAuthProvider, AdminJwtGuard],
   controllers: [AuthController],
-  exports: [AuthService, 'JWT_ADMIN_SERVICE', JwtModule, AdminAuthProvider, AdminJwtGuard],
+  exports: [AuthService, 'JWT_ADMIN_SERVICE', JwtModule, AdminJwtGuard],
 })
 export class AuthModule {}

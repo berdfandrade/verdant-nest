@@ -1,6 +1,6 @@
 import { Model } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, Types, Schema as MongooseSchema } from 'mongoose';
 
 export interface UserModel extends Model<User> {
 	showNearbyUsers(profile: User, maxDistanceKm: number): Promise<User[]>;
@@ -101,7 +101,7 @@ export class User extends Document {
 	@Prop([String])
 	languages: string[];
 
-	@Prop({ type: [Types.ObjectId], ref: 'Conversation' })
+	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Conversation' }] })
 	conversations: Types.ObjectId[];
 
 	@Prop([String])
@@ -110,14 +110,18 @@ export class User extends Document {
 	@Prop([String])
 	interests: string[];
 
-	@Prop({ type: [Types.ObjectId], ref: 'User' })
+	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
 	matches: Types.ObjectId[];
 
-	@Prop({ type: [Types.ObjectId], ref: 'User' })
+	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
 	likedProfiles: Types.ObjectId[];
 
-	@Prop({ type: [Types.ObjectId], ref: 'User' })
+	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
 	likedYouProfiles: Types.ObjectId[];
+
+	// Perfis que o usuário "passou" (deslizou para o lado) e não devem voltar no feed
+	@Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], default: [] })
+	passedProfiles: Types.ObjectId[];
 
 	@Prop({
 		type: {
@@ -154,6 +158,16 @@ export class User extends Document {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+// Campos sensíveis nunca saem na resposta da API
+export const USER_PRIVATE_FIELDS = ['password', 'refreshToken', '__v'] as const;
+
+UserSchema.set('toJSON', {
+	transform: (_doc, ret: Record<string, any>) => {
+		for (const field of USER_PRIVATE_FIELDS) delete ret[field];
+		return ret;
+	},
+});
 
 // Índice geoespacial necessário para $geoNear
 UserSchema.index({ location: '2dsphere' });

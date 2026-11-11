@@ -94,5 +94,10 @@
 		],
 		"coverageDirectory": "../coverage",
 		"testEnvironment": "node"
+	},
+	"allowScripts": {
+		"bcrypt@5.1.1": true,
+		"mongodb-memory-server@10.1.4": true,
+		"@swc/core@1.13.3": true
 	}
 }

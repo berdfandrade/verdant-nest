@@ -1,7 +1,6 @@
-import { HydratedDocument, Model } from "mongoose";
+import { HydratedDocument } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
-import { IsEmail } from "class-validator";
+import { Document } from "mongoose";
 
 export type AdminDocument = HydratedDocument<Admin>;
 
@@ -10,11 +9,10 @@ export class Admin extends Document {
   @Prop()
   name: string;
 
-  @Prop()
-  @IsEmail()
+  @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop()
+  @Prop({ required: true })
   password: string;
 
   @Prop()
@@ -22,3 +20,11 @@ export class Admin extends Document {
 }
 
 export const AdminSchema = SchemaFactory.createForClass(Admin);
+
+AdminSchema.set('toJSON', {
+  transform: (_doc, ret: Record<string, any>) => {
+    delete ret.password;
+    delete ret.__v;
+    return ret;
+  },
+});

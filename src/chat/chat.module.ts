@@ -5,11 +5,10 @@ import { ChatController } from './chat.controller';
 import { RedisModule } from '../redis/redis.module';
 import { MessagesModule } from '../messages/messages.module';
 import { ChatGateway } from './chat.gateway';
-import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-	imports: [ConversationModule, RedisModule, MessagesModule, AuthModule, JwtModule],
+	imports: [ConversationModule, RedisModule, MessagesModule, AuthModule],
 	controllers: [ChatController],
 	providers: [ChatGateway, ChatService],
 })

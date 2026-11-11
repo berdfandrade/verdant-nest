@@ -25,13 +25,12 @@ export class UserService {
 
 		const hashedPassword = await this.cryptService.hashPassword(createUserDto.password);
 
-		createUserDto.password = hashedPassword;
-
-		const user = new this.userModel(createUserDto);
+		// Não altera o DTO recebido (evita efeitos colaterais, ex.: mocks compartilhados nos testes)
+		const user = new this.userModel({ ...createUserDto, password: hashedPassword });
 		return user.save();
 	}
 
-	async getUserById(id: Types.ObjectId): Promise<User> {
+	async getUserById(id: Types.ObjectId | string): Promise<User> {
 		const user = await this.userModel.findById(id);
 		if (!user) throw new NotFoundException('User does not exist');
 		return user;
@@ -41,16 +40,15 @@ export class UserService {
 		return this.userModel.find();
 	}
 
-	async updateRefreshToken(id: Types.ObjectId, refreshToken: string) {
-		const user = await this.userModel.findById(id);
+	async updateRefreshToken(id: Types.ObjectId | string, refreshToken: string | null) {
+		const user = await this.userModel.findByIdAndUpdate(id, { refreshToken });
 		if (!user) throw new NotFoundException('User does not exists');
-		await this.userModel.findByIdAndUpdate(id, { refreshToken });
 	}
 
-	async logout(id: Types.ObjectId) {
+	async logout(id: Types.ObjectId | string) {
 		const user = await this.userModel.findById(id);
 		if (!user) throw new NotFoundException('User does not exist');
-		if (user.refreshToken === null) return { message: 'Already logged out' };
+		if (!user.refreshToken) return { message: 'Already logged out' };
 		user.refreshToken = null;
 		await user.save();
 		return { message: 'Logout successful' };
@@ -62,14 +60,14 @@ export class UserService {
 		return user;
 	}
 
-	async updateUser(id: Types.ObjectId, updateUserDto: UpdateUserDto): Promise<User> {
-		if (updateUserDto.password) {
-			updateUserDto.password = await this.cryptService.hashPassword(
-				updateUserDto.password,
-			);
+	async updateUser(id: Types.ObjectId | string, updateUserDto: UpdateUserDto): Promise<User> {
+		const data = { ...updateUserDto };
+
+		if (data.password) {
+			data.password = await this.cryptService.hashPassword(data.password);
 		}
 
-		const updatedUser = await this.userModel.findByIdAndUpdate(id, updateUserDto, {
+		const updatedUser = await this.userModel.findByIdAndUpdate(id, data, {
 			new: true,
 		});
 
@@ -78,7 +76,16 @@ export class UserService {
 		return updatedUser;
 	}
 
-	async deleteUser(id: Types.ObjectId): Promise<void> {
+	async setStatus(
+		id: Types.ObjectId | string,
+		status: Partial<Pick<User, 'active' | 'verified' | 'premium'>>,
+	): Promise<User> {
+		const updatedUser = await this.userModel.findByIdAndUpdate(id, status, { new: true });
+		if (!updatedUser) throw new NotFoundException('User not found');
+		return updatedUser;
+	}
+
+	async deleteUser(id: Types.ObjectId | string): Promise<void> {
 		const result = await this.userModel.findByIdAndDelete(id);
 		if (!result) throw new NotFoundException('User not found');
 	}

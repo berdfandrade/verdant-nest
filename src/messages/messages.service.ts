@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Message } from './message.schema';
 import { SendMessageDto } from './dto/send-message.dto';
 import { ModifyMessage } from './dto/modify-message.dto';
 import { Conversation } from '../conversation/schemas/conversation.schema';
+import MongoDbUtils from '../utils/MongoDB.utils';
 
 @Injectable()
 export class MessagesService {
@@ -14,10 +15,18 @@ export class MessagesService {
 	) {}
 
 	// Cria | Manda uma nova mensagem
-	async create(messageDto: SendMessageDto): Promise<any> {
+	async create(messageDto: SendMessageDto): Promise<Message> {
 		const conversation = await this.conversationModel.findById(messageDto.conversationId);
 		if (!conversation)
 			throw new NotFoundException('Not able to send a message to an unexisting chat');
+
+		const isParticipant = conversation.participants.some(p =>
+			MongoDbUtils.sameId(p, messageDto.sender),
+		);
+		if (!isParticipant) throw new ForbiddenException('User not in conversation');
+
+		if (!conversation.isActive)
+			throw new ForbiddenException('This conversation is no longer active');
 
 		const newMessage = new this.messageModel(messageDto);
 		const savedMessage = await newMessage.save();
@@ -26,14 +35,13 @@ export class MessagesService {
 		conversation.messages.push(savedMessage.id);
 		await conversation.save();
 
-		// Tenho que decidir se retorna a conversa, ou retorna a mensagem 
 		return savedMessage;
 	}
 
 	async modifyMessage(dto: ModifyMessage): Promise<Message> {
 		const message = await this.messageModel.findOneAndUpdate(
 			{ _id: dto.messageId, sender: dto.sender },
-			{ content: dto.content },
+			{ content: dto.content, editedAt: new Date() },
 			{ new: true },
 		);
 		if (!message) throw new NotFoundException('Message not found');
@@ -41,11 +49,29 @@ export class MessagesService {
 		return message;
 	}
 
-	async searchMessage(query: string): Promise<Message[]> {
-		return this.messageModel
-			.find({
-				content: { $regex: query, $options: 'i' },
-			})
-			.exec();
+	async deleteMessage(messageId: Types.ObjectId | string, sender: Types.ObjectId | string) {
+		const message = await this.messageModel.findOneAndDelete({
+			_id: MongoDbUtils.toObjectId(messageId),
+			sender: MongoDbUtils.toObjectId(sender),
+		});
+		if (!message) throw new NotFoundException('Message not found');
+
+		await this.conversationModel.updateOne(
+			{ _id: message.conversationId },
+			{ $pull: { messages: message._id } },
+		);
+
+		return { deleted: true };
+	}
+
+	// Busca por texto. Se conversationId for passado, busca só dentro da conversa
+	async searchMessage(query: string, conversationId?: Types.ObjectId | string): Promise<Message[]> {
+		const filter: Record<string, any> = {
+			content: { $regex: MongoDbUtils.escapeRegex(query), $options: 'i' },
+		};
+
+		if (conversationId) filter.conversationId = MongoDbUtils.toObjectId(conversationId);
+
+		return this.messageModel.find(filter).sort({ sentAt: -1 }).limit(50).exec();
 	}
 }
