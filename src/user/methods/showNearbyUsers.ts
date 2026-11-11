@@ -6,6 +6,8 @@ UserSchema.statics.showNearbyUsers = async function (
 	myProfile: User,
 	maxDistanceKm = 10,
 ): Promise<User[]> {
+	// Sem localização não há como calcular quem está perto
+	if (!myProfile.location?.coordinates?.length) return [];
 	const [longitude, latitude] = myProfile.location.coordinates;
 	const maxDistanceMeters = maxDistanceKm * 1000;
 

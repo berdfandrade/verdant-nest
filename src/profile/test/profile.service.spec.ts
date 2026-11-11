@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { ProfileService, birthDateRangeFromAges } from '@/profile/profile.service';
 import { Model } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, NotFoundException } from '@nestjs/common';
 import { SetupTestApp } from '@test/test-setup';
 import { User } from '@/user/user.schema';
 import { UserService } from '@/user/user.service';
@@ -147,6 +147,35 @@ describe('🙋 ProfileService', () => {
 		});
 	});
 
+	describe('📍 users without location', () => {
+		it('should throw NotFoundException if I have no location yet', async () => {
+			const { location, ...withoutLocation } = mockUser;
+			const user = await userService.create(withoutLocation);
+
+			await expect(profileService.showMeProfiles(user.id)).rejects.toThrow(NotFoundException);
+		});
+
+		it('should show the feed after I send my location', async () => {
+			const { location, ...withoutLocation } = mockUser;
+			const user = await userService.create(withoutLocation);
+			await userService.create(mockUserMaria);
+
+			await profileService.updateLocation(user.id, { longitude: -46.6333, latitude: -23.5515 });
+
+			const usersNearby = await profileService.showMeProfiles(user.id);
+			expect(usersNearby.length).toBe(1);
+		});
+
+		it('should not show profiles without location in the feed', async () => {
+			const user = await userService.create(mockUser);
+			const { location, ...mariaWithoutLocation } = mockUserMaria;
+			await userService.create(mariaWithoutLocation);
+
+			const usersNearby = await profileService.showMeProfiles(user.id);
+			expect(usersNearby.length).toBe(0);
+		});
+	});
+
 	describe('🎂 birthDateRangeFromAges', () => {
 		it('should convert an age range to a birth date range', () => {
 			const now = new Date('2026-06-15T12:00:00Z');
@@ -198,7 +227,7 @@ describe('🙋 ProfileService', () => {
 				latitude: -19.9208,
 			});
 
-			expect(response.location.coordinates).toEqual([-43.9378, -19.9208]);
+			expect(response.location?.coordinates).toEqual([-43.9378, -19.9208]);
 		});
 	});
 });

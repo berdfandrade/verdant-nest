@@ -22,3 +22,6 @@ npm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+
+# Claude Code (configuração local, ex.: launch.json do painel do navegador)
+.claude/

@@ -52,6 +52,14 @@ describe('🧑 UserController (e2e)', () => {
 			expect(response.body.refreshToken).toBeUndefined();
 		});
 
+		it('should create a user without location', async () => {
+			const { location, ...withoutLocation } = mockUser;
+			const response = await request(app.getHttpServer()).post('/users').send(withoutLocation);
+
+			expect(response.status).toBe(201);
+			expect(response.body.location).toBeUndefined();
+		});
+
 		it('should return 409 if the email is already registered', async () => {
 			await userService.create(mockUser);
 			const response = await request(app.getHttpServer()).post('/users').send(mockUser);

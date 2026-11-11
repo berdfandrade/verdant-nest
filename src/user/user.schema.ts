@@ -2,6 +2,18 @@ import { Model } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types, Schema as MongooseSchema } from 'mongoose';
 
+// Ponto GeoJSON: [longitude, latitude]
+@Schema({ _id: false })
+export class GeoPoint {
+	@Prop({ type: String, enum: ['Point'], default: 'Point', required: true })
+	type: 'Point';
+
+	@Prop({ type: [Number], required: true })
+	coordinates: [number, number];
+}
+
+export const GeoPointSchema = SchemaFactory.createForClass(GeoPoint);
+
 export interface UserModel extends Model<User> {
 	showNearbyUsers(profile: User, maxDistanceKm: number): Promise<User[]>;
 }
@@ -38,21 +50,12 @@ export class User extends Document {
 	@Prop({ required: true })
 	birthDate: Date;
 
-	@Prop({
-		type: {
-			type: String,
-			enum: ['Point'],
-			default: 'Point',
-		},
-		coordinates: {
-			type: [Number],
-			required: true,
-		},
-	})
-	location: {
-		type: 'Point';
-		coordinates: [number, number];
-	};
+	/*
+		Opcional: o usuário pode se cadastrar sem localização e enviá-la depois
+		(PUT /profile/location). Quando existe, precisa ser um Point válido.
+	*/
+	@Prop({ type: GeoPointSchema, default: undefined })
+	location?: GeoPoint;
 
 	@Prop([String])
 	profession: string[];
