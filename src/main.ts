@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { configureViews } from './config/views.config';
 import { validationPipeConfig } from './config/validation-pipe.config';
 import { setupSwagger } from './config/swagger.config';
+import { configureCors } from './config/cors.config';
 import { configureUploads } from './config/uploads.config';
 
 async function bootstrap() {
@@ -15,7 +16,7 @@ async function bootstrap() {
   // Atrás de proxy/load balancer, o IP real vem do X-Forwarded-For (usado no rate limiting)
   if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY)
     setupSwagger(app)
-    app.enableCors()
+    configureCors(app)
     configureViews(app)
     configureUploads(app)
     app.use(morgan('dev'))

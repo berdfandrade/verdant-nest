@@ -112,6 +112,7 @@ Veja [`.env.example`](.env.example).
 | `ADMIN_SECRET_KEY` | – | Chave exigida no body para criar um admin (`POST /admin`) |
 | `RATE_LIMIT_ENABLED` | `true` (`false` em `NODE_ENV=test`) | Liga/desliga o rate limiting |
 | `TRUST_PROXY` | – | Atrás de proxy/load balancer: número de proxies confiáveis (o IP real vem do `X-Forwarded-For`) |
+| `CORS_ORIGINS` | – | Origens de navegador liberadas (HTTP e WebSocket), separadas por vírgula. `*` libera todas. Sem a variável: tudo liberado em dev, **nada** liberado em produção |
 | `STORAGE_DRIVER` | `local` | Onde salvar as fotos: `local` (disco) ou `s3` |
 | `UPLOADS_DIR` / `UPLOADS_PUBLIC_URL` | `./uploads` / `/uploads` | Pasta e prefixo das URLs no driver local |
 | `S3_BUCKET` / `S3_REGION` / `S3_ENDPOINT` | – / `us-east-1` / – | Bucket do driver S3. `S3_ENDPOINT` serve para provedores compatíveis (MinIO, R2) |
@@ -312,6 +313,7 @@ socket.emit('leave_conversation', { conversationId });
 - O `userId` **sempre** vem do token (nunca do payload do cliente).
 - Só participantes de uma conversa **ativa** entram na sala ou mandam mensagens.
 - Presença: `online:<userId>` e `socket:<socketId>` ficam no Redis e são removidos no disconnect.
+- **CORS:** o mesmo do HTTP, definido por `CORS_ORIGINS` (aplicado pelo `CorsIoAdapter`, em `src/config/cors.config.ts`). Apps nativos não enviam `Origin` e não são afetados. Em produção, defina `CORS_ORIGINS` se houver cliente web.
 - `typing` e `mark_read` exigem ter entrado na sala (`join_conversation`, que já confere a participação). Assim não há consulta ao banco a cada tecla digitada.
 - Cada mensagem tem `readAt` (`null` até o outro participante ler).
 
