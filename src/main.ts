@@ -11,6 +11,8 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const MODE = process.env.NODE_ENV
   const PORT = process.env.PORT || 3000;
+  // Atrás de proxy/load balancer, o IP real vem do X-Forwarded-For (usado no rate limiting)
+  if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY)
     setupSwagger(app)
     app.enableCors()
     configureViews(app)

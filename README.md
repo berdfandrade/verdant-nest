@@ -110,6 +110,8 @@ Veja [`.env.example`](.env.example).
 | `REFRESH_JWT_SECRET` | valor de dev | Secret do refresh token |
 | `ADMIN_JWT_SECRET` | valor de dev | Secret do token de admin |
 | `ADMIN_SECRET_KEY` | – | Chave exigida no body para criar um admin (`POST /admin`) |
+| `RATE_LIMIT_ENABLED` | `true` (`false` em `NODE_ENV=test`) | Liga/desliga o rate limiting |
+| `TRUST_PROXY` | – | Atrás de proxy/load balancer: número de proxies confiáveis (o IP real vem do `X-Forwarded-For`) |
 
 > ⚠️ Os valores padrão dos secrets servem só para desenvolvimento. **Sempre** defina secrets próprios em produção.
 
@@ -126,6 +128,21 @@ Envie o access token no header `Authorization: Bearer <access_token>`.
 Admins têm um login separado (`POST /login/admin`), assinado com outro secret: um token de usuário comum **não** acessa rotas de admin, e vice-versa.
 
 Usuários banidos (`active: false`) não conseguem logar e os tokens já emitidos param de funcionar na hora.
+
+### Rate limiting
+
+Limites por IP (HTTP) e por usuário (WebSocket). Acima do limite, a resposta é **429** com o header `Retry-After`.
+
+| Onde | Limite |
+| --- | --- |
+| Qualquer rota HTTP | 120 por minuto |
+| `POST /login` e `POST /login/admin` | 5 por minuto |
+| `POST /login/refresh` | 20 por minuto |
+| `POST /users` (cadastro) | 10 por hora |
+| `POST /messages` | 30 por minuto |
+| Evento `send_message` (socket) | 20 a cada 10 s por usuário (contador no Redis; responde `send_message_error`) |
+
+Os valores ficam em `src/config/rate-limit.config.ts`. Atrás de proxy, defina `TRUST_PROXY`, senão todos os usuários parecem vir do mesmo IP.
 
 ## Endpoints
 
