@@ -112,6 +112,11 @@ Veja [`.env.example`](.env.example).
 | `ADMIN_SECRET_KEY` | – | Chave exigida no body para criar um admin (`POST /admin`) |
 | `RATE_LIMIT_ENABLED` | `true` (`false` em `NODE_ENV=test`) | Liga/desliga o rate limiting |
 | `TRUST_PROXY` | – | Atrás de proxy/load balancer: número de proxies confiáveis (o IP real vem do `X-Forwarded-For`) |
+| `STORAGE_DRIVER` | `local` | Onde salvar as fotos: `local` (disco) ou `s3` |
+| `UPLOADS_DIR` / `UPLOADS_PUBLIC_URL` | `./uploads` / `/uploads` | Pasta e prefixo das URLs no driver local |
+| `S3_BUCKET` / `S3_REGION` / `S3_ENDPOINT` | – / `us-east-1` / – | Bucket do driver S3. `S3_ENDPOINT` serve para provedores compatíveis (MinIO, R2) |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | – | Credenciais do S3 (sem elas, usa a cadeia padrão da AWS) |
+| `S3_PUBLIC_URL` | URL do bucket | Prefixo público das fotos (ex.: CDN) |
 
 > ⚠️ Os valores padrão dos secrets servem só para desenvolvimento. **Sempre** defina secrets próprios em produção.
 
@@ -178,6 +183,11 @@ Legenda: 🌐 público · 🔑 usuário logado · 🙋 apenas o próprio usuári
 | GET / PUT | `/profile/preferences` | 🔑 | Preferências (faixa etária, distância, filtros) |
 | GET / PUT | `/profile/about` | 🔑 | Seção "sobre mim" |
 | PUT | `/profile/location` | 🔑 | Atualiza a localização `{ longitude, latitude }` |
+| POST | `/profile/photos` | 🔑 | Envia uma foto (`multipart/form-data`, campo `photo`). JPEG, PNG ou WEBP, até 5 MB, máximo 6 fotos |
+| DELETE | `/profile/photos/:photoId` | 🔑 | Remove a foto (e o arquivo no storage) |
+| PATCH | `/profile/photos/:photoId/main` | 🔑 | Define como foto principal (primeira posição) |
+
+> **Fotos:** o tipo é validado pelo conteúdo do arquivo (magic bytes), não pelo `Content-Type` enviado. O nome no storage é `users/<id>/<uuid>.<ext>`. Com `STORAGE_DRIVER=local` (padrão), os arquivos ficam em `UPLOADS_DIR` e a API serve em `/uploads`. Com `STORAGE_DRIVER=s3`, vão para o bucket (S3, MinIO ou R2) e a URL usa `S3_PUBLIC_URL`. Veja o `.env.example`.
 
 ### Likes — `/likes`
 

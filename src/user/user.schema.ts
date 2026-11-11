@@ -66,13 +66,19 @@ export class User extends Document {
 	@Prop([String])
 	description: string[];
 
+	/*
+		Fotos do perfil (a primeira é a principal).
+		`key` existe nas fotos enviadas por upload: é a chave no storage, usada para apagar o arquivo.
+		Fotos antigas só com `url` (links externos) continuam válidas.
+	*/
 	@Prop([
 		{
 			url: String,
+			key: String,
 			uploadDate: { type: Date, default: Date.now },
 		},
 	])
-	photos: { url: string; uploadDate: Date }[];
+	photos: { _id?: Types.ObjectId; url: string; key?: string; uploadDate: Date }[];
 
 	@Prop({
 		type: {
