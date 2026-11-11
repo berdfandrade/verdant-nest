@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { configureViews } from './config/views.config';
 import { validationPipeConfig } from './config/validation-pipe.config';
 import { setupSwagger } from './config/swagger.config';
+import { configureUploads } from './config/uploads.config';
 
 async function bootstrap() {
 
@@ -16,6 +17,7 @@ async function bootstrap() {
     setupSwagger(app)
     app.enableCors()
     configureViews(app)
+    configureUploads(app)
     app.use(morgan('dev'))
     validationPipeConfig(app)
 
