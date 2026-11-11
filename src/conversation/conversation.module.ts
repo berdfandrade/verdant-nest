@@ -6,7 +6,7 @@ import {
   ConversationSchema,
 } from "./schemas/conversation.schema";
 import { ConversationController } from "./conversation.controller";
-import { MessagesModule } from "../messages/messages.module";
+import { MessagesModule } from "@/messages/messages.module";
 
 @Module({
   imports: [

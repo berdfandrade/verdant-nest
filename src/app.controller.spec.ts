@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { configureViews } from './config/views.config';
 import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
+import { AppModule } from '@/app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 describe('AppController (e2e)', () => {

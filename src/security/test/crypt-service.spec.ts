@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CryptService } from '../crypt.service';
+import { CryptService } from '@/security/crypt.service';
 import * as bcrypt from 'bcrypt';
 
 let cryptService: CryptService;

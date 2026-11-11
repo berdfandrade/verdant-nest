@@ -1,7 +1,7 @@
 import { Controller, Post, UseGuards, Body, Get } from '@nestjs/common';
-import { User } from '../auth/decorators/user.decorator';
+import { User } from '@/auth/decorators/user.decorator';
 import { LikesService } from './likes.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { LikeUserDto } from './dto/likes.dto';
 import mongoose from 'mongoose';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';

@@ -313,6 +313,17 @@ test/
 └── test-setup.ts   # SetupTestApp() usado pelos testes
 ```
 
+### Imports com `@`
+
+Os imports entre módulos usam aliases em vez de caminhos relativos (`../../`):
+
+| Alias | Aponta para | Exemplo |
+| --- | --- | --- |
+| `@/*` | `src/*` | `import { UserService } from '@/user/user.service';` |
+| `@test/*` | `test/*` | `import { SetupTestApp } from '@test/test-setup';` |
+
+Imports dentro da mesma pasta continuam relativos (`./admin.schema`, `./dto/...`). Os aliases estão em `tsconfig.json` (`paths`) e no `moduleNameMapper` do Jest (`package.json` e `test/jest-e2e.json`). O `nest build` converte os aliases em caminhos relativos no `dist/`, então nada muda em produção.
+
 ## Próximos passos
 
 - [ ] Aplicar os `advancedFilters` (verificado, altura, educação, religião…) e o `showMe`/`gender` no feed

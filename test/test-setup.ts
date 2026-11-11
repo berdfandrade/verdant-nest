@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { AppModule } from '../src/app.module';
-import { validationPipeConfig } from '../src/config/validation-pipe.config';
+import { AppModule } from '@/app.module';
+import { validationPipeConfig } from '@/config/validation-pipe.config';
 
 /*
   Sobe a aplicação inteira (AppModule) para os testes.

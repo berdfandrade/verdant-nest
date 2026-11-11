@@ -1,11 +1,11 @@
 import { Types } from 'mongoose';
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ConversationService } from '../conversation/conversation.service';
-import { RedisService } from '../redis/redis.service';
-import { Message } from '../messages/message.schema';
-import { Conversation } from '../conversation/schemas/conversation.schema';
-import { MessagesService } from '../messages/messages.service';
-import MongoDbUtils from '../utils/MongoDB.utils';
+import { ConversationService } from '@/conversation/conversation.service';
+import { RedisService } from '@/redis/redis.service';
+import { Message } from '@/messages/message.schema';
+import { Conversation } from '@/conversation/schemas/conversation.schema';
+import { MessagesService } from '@/messages/messages.service';
+import MongoDbUtils from '@/utils/MongoDB.utils';
 
 export interface ChatConnection {
 	socketId: string;

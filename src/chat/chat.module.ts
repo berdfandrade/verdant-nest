@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { ConversationModule } from '../conversation/conversation.module';
+import { ConversationModule } from '@/conversation/conversation.module';
 import { ChatController } from './chat.controller';
-import { RedisModule } from '../redis/redis.module';
-import { MessagesModule } from '../messages/messages.module';
+import { RedisModule } from '@/redis/redis.module';
+import { MessagesModule } from '@/messages/messages.module';
 import { ChatGateway } from './chat.gateway';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '@/auth/auth.module';
 
 @Module({
 	imports: [ConversationModule, RedisModule, MessagesModule, AuthModule],

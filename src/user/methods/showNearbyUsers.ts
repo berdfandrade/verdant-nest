@@ -1,5 +1,5 @@
-import { User } from '../user.schema';
-import { UserSchema } from '../user.schema';
+import { User } from '@/user/user.schema';
+import { UserSchema } from '@/user/user.schema';
 
 // Talvez esse método não seja ideal dessa maneira
 UserSchema.statics.showNearbyUsers = async function (

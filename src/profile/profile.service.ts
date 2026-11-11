@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { User, UserModel, USER_PRIVATE_FIELDS } from '../user/user.schema';
-import { UpdatePreferencesDto } from '../user/dto/update-preferences.dto';
-import { UpdateAboutDto } from '../user/dto/update-about.dto';
+import { User, UserModel, USER_PRIVATE_FIELDS } from '@/user/user.schema';
+import { UpdatePreferencesDto } from '@/user/dto/update-preferences.dto';
+import { UpdateAboutDto } from '@/user/dto/update-about.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 
 /*

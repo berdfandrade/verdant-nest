@@ -4,11 +4,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './user.schema';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import MongoDbUtils from '../utils/MongoDB.utils';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { SelfOnly } from '../auth/decorators/self-only.decorator';
-import { AdminOnly } from '../auth/decorators/admin-only-decorator';
-import { User as CurrentUser } from '../auth/decorators/user.decorator';
+import MongoDbUtils from '@/utils/MongoDB.utils';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { SelfOnly } from '@/auth/decorators/self-only.decorator';
+import { AdminOnly } from '@/auth/decorators/admin-only-decorator';
+import { User as CurrentUser } from '@/auth/decorators/user.decorator';
 
 @ApiTags('👤 Users')
 @ApiBearerAuth()

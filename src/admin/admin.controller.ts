@@ -2,8 +2,8 @@ import { Body, Controller, Get, Param, Post, Patch, Delete, Query, BadRequestExc
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { AdminOnly } from '../auth/decorators/admin-only-decorator';
-import MongoDbUtils from '../utils/MongoDB.utils';
+import { AdminOnly } from '@/auth/decorators/admin-only-decorator';
+import MongoDbUtils from '@/utils/MongoDB.utils';
 
 @ApiTags('👑 Admin')
 @ApiBearerAuth()

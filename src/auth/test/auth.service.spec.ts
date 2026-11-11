@@ -1,17 +1,17 @@
 import { INestApplication, UnauthorizedException } from '@nestjs/common';
 import mongoose, { Model } from 'mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from '../../user/user.service';
-import { AuthService } from '../auth.service';
-import { AuthDto } from '../dto/auth.dto';
+import { UserService } from '@/user/user.service';
+import { AuthService } from '@/auth/auth.service';
+import { AuthDto } from '@/auth/dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
-import { CryptService } from '../../security/crypt.service';
-import { User, UserSchema } from '../../user/user.schema';
+import { CryptService } from '@/security/crypt.service';
+import { User, UserSchema } from '@/user/user.schema';
 import { getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { mockUser } from '../../user/test/mock/user.mock';
+import { mockUser } from '@/user/test/mock/user.mock';
 import { JwtModule } from '@nestjs/jwt';
-import { SetupTestApp } from '../../../test/test-setup';
+import { SetupTestApp } from '@test/test-setup';
 
 let app: INestApplication;
 let mongoServer: MongoMemoryServer;

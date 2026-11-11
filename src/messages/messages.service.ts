@@ -4,8 +4,8 @@ import { Model, Types } from 'mongoose';
 import { Message } from './message.schema';
 import { SendMessageDto } from './dto/send-message.dto';
 import { ModifyMessage } from './dto/modify-message.dto';
-import { Conversation } from '../conversation/schemas/conversation.schema';
-import MongoDbUtils from '../utils/MongoDB.utils';
+import { Conversation } from '@/conversation/schemas/conversation.schema';
+import MongoDbUtils from '@/utils/MongoDB.utils';
 
 @Injectable()
 export class MessagesService {

@@ -11,7 +11,7 @@ import {
 	Length,
 	ValidateNested,
 } from 'class-validator';
-import { IsE164 } from '../../validators/is-e164.decorator';
+import { IsE164 } from '@/validators/is-e164.decorator';
 import { Type } from 'class-transformer';
 import { PreferencesDto } from './preferences.dto';
 import { AboutDto } from './about.dto';

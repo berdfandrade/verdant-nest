@@ -11,9 +11,9 @@ import {
 	ConnectedSocket,
 } from '@nestjs/websockets';
 
-import { ConversationService } from '../conversation/conversation.service';
+import { ConversationService } from '@/conversation/conversation.service';
 import { Types } from 'mongoose';
-import { AuthService } from '../auth/auth.service';
+import { AuthService } from '@/auth/auth.service';
 
 /*
 	Fluxo do cliente:

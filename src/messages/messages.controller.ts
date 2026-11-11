@@ -3,10 +3,10 @@ import { MessagesService } from './messages.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { EditMessageDto } from './dto/modify-message.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { User } from '../auth/decorators/user.decorator';
-import { ConversationService } from '../conversation/conversation.service';
-import MongoDbUtils from '../utils/MongoDB.utils';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { User } from '@/auth/decorators/user.decorator';
+import { ConversationService } from '@/conversation/conversation.service';
+import MongoDbUtils from '@/utils/MongoDB.utils';
 
 @ApiTags('✉️ Message')
 @ApiBearerAuth()

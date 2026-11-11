@@ -1,19 +1,19 @@
 import { INestApplication,} from '@nestjs/common';
 import * as request from 'supertest';
 import mongoose from 'mongoose';
-import { mockUser, mockUserMaria } from '../../user/test/mock/user.mock';
+import { mockUser, mockUserMaria } from '@/user/test/mock/user.mock';
 import { Model } from 'mongoose';
-import { User } from '../../user/user.schema';
+import { User } from '@/user/user.schema';
 import { getModelToken } from '@nestjs/mongoose';
-import { Conversation } from '../schemas/conversation.schema';
-import { UserService } from '../../user/user.service';
+import { Conversation } from '@/conversation/schemas/conversation.schema';
+import { UserService } from '@/user/user.service';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { ConversationService } from '../conversation.service';
-import { CreateConversationDto } from '../dto/create-conversation.dto';
-import { SetupTestApp } from '../../../test/test-setup';
-import { AuthService } from '../../auth/auth.service';
-import { AuthDto } from '../../auth/dto/auth.dto';
-import { MessagesService } from '../../messages/messages.service';
+import { ConversationService } from '@/conversation/conversation.service';
+import { CreateConversationDto } from '@/conversation/dto/create-conversation.dto';
+import { SetupTestApp } from '@test/test-setup';
+import { AuthService } from '@/auth/auth.service';
+import { AuthDto } from '@/auth/dto/auth.dto';
+import { MessagesService } from '@/messages/messages.service';
 
 
 let app: INestApplication;

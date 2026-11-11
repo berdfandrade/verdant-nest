@@ -1,10 +1,10 @@
 import { ForbiddenException, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Message, MessageDocument } from '../messages/message.schema';
+import { Message, MessageDocument } from '@/messages/message.schema';
 import { Conversation, ConversationDocument } from './schemas/conversation.schema';
 import { CreateConversationDto } from './dto/create-conversation.dto';
-import MongoDbUtils from '../utils/MongoDB.utils';
+import MongoDbUtils from '@/utils/MongoDB.utils';
 
 // Campos públicos de um participante quando populado
 const PARTICIPANT_FIELDS = 'fullName username photos verified';

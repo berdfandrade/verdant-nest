@@ -1,4 +1,4 @@
-import { Message } from '../../../messages/message.schema';
+import { Message } from '@/messages/message.schema';
 import { Types } from 'mongoose';
 
 export const mockMessage = {

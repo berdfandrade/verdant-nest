@@ -1,7 +1,7 @@
 
 import { applyDecorators, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../jwt-auth.guard';
-import { SelfGuard } from '../self.guard';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { SelfGuard } from '@/auth/self.guard';
 
 export function SelfOnly() {
   return applyDecorators(
