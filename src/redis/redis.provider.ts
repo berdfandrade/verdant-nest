@@ -8,6 +8,8 @@ export const RedisProvider: Provider = {
 			host: process.env.REDIS_HOST || 'localhost',
 			port: Number(process.env.REDIS_PORT) || 6379,
 			password: process.env.REDIS_PASSWORD || undefined,
+			// IPv4 e IPv6: a rede privada do Railway (*.railway.internal) é só IPv6
+			family: 0,
 		});
 	},
 };
