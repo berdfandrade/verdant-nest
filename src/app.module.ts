@@ -21,6 +21,7 @@ import { ProfileModule } from "./profile/profile.module";
 import { AdminModule } from "./admin/admin.module";
 import { StorageModule } from "./storage/storage.module";
 import { SafetyModule } from "./safety/safety.module";
+import { DatesModule } from "./dates/dates.module";
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SafetyModule } from "./safety/safety.module";
     AuthModule,
     AdminModule,
     SafetyModule,
+    DatesModule,
     ProfileModule,
     ConversationModule,
     DatabaseModule,
