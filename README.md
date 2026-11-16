@@ -243,6 +243,20 @@ Motivos de denúncia: `spam`, `fake_profile`, `harassment`, `inappropriate_conte
 
 **Efeitos do bloqueio (nos dois sentidos):** desfaz likes e match, arquiva a conversa, tira os dois do feed um do outro e impede novos likes (403). Denunciar a mesma pessoa de novo, enquanto a denúncia está aberta, atualiza a denúncia existente em vez de criar outra.
 
+### Dates — `/dates`
+
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| POST | `/dates` | 🔑 | Convida um match `{ inviteeId, place: { name, address? }, scheduledAt }` (`scheduledAt` em ISO 8601) |
+| GET | `/dates?from=&to=` | 🔑 | Meus dates pendentes e aceitos, do mais próximo ao mais distante. Sem `from`, só a partir de agora |
+| GET | `/dates/invites` | 🔑 | Convites que recebi e ainda não respondi |
+| GET | `/dates/:id` | 🔑 | Detalhe de um date (só para os dois participantes) |
+| PATCH | `/dates/:id/accept` | 🔑 | Aceita o convite (só quem foi convidado) |
+| PATCH | `/dates/:id/decline` | 🔑 | Recusa o convite (só quem foi convidado) |
+| PATCH | `/dates/:id/cancel` | 🔑 | Cancela um date pendente ou aceito (qualquer um dos dois) |
+
+Cada date vem com `inviter` e `invitee` populados (nome, username e fotos).
+
 ### Admin — `/admin`
 
 | Método | Rota | Acesso | Descrição |
@@ -327,6 +341,7 @@ socket.emit('leave_conversation', { conversationId });
 - **Feed**: até 50 perfis ativos dentro de `preferences.distance` km (padrão 10 km, aceita `"50"` ou `"50km"`) e de `preferences.ageRange`, excluindo eu mesmo, quem eu curti, passei ou dei match. Os resultados vêm ordenados por distância e com o campo `distance` (em metros). E-mail, telefone e as listas internas não aparecem.
   - **Gênero (todos, mútuo):** só aparecem pessoas cujo `gender` está no meu `showMe` **e** cujo `showMe` inclui o meu gênero. `showMe` vazio ou `"everyone"` não restringe. Valores: `women` ↔ `Female`, `men` ↔ `Male`, `non-binary` ↔ `Non-binary`.
   - **Filtros avançados (só premium, rígidos):** `verified`, `height` (faixa), `education` (contém o texto), `alcohol`, `smoking`, `children`, `zodiacSign`, `politicalView` e `religion` (exatos, sem diferenciar maiúsculas). Quem não bate, ou não preencheu o campo filtrado, sai do feed. Para usuários sem premium, os filtros ficam salvos mas não são aplicados.
+- **Dates**: só dá para convidar um match, para uma data futura, e existe no máximo um convite pendente por casal (409). Bloquear desfaz o match, então também impede novos convites. Status: `pending` → `accepted` ou `declined`; `pending` ou `accepted` → `canceled`. Não dá para aceitar um date que já passou, e responder de novo um convite já respondido retorna 409. Quem não participa do date recebe 404.
 - **Atualização de usuário**: `PUT /users/:id` ignora campos protegidos (`premium`, `verified`, `active`, `refreshToken`, `matches`, `likedProfiles`, `likedYouProfiles`, `conversations`). A `ValidationPipe` global usa `whitelist: true` e descarta qualquer campo fora do DTO.
 
 ## Testes
