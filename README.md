@@ -30,6 +30,7 @@
 - [Regras de negócio](#regras-de-negócio)
 - [Testes](#testes)
 - [Estrutura do projeto](#estrutura-do-projeto)
+- [Deploy (Railway)](#deploy-railway)
 - [Próximos passos](#próximos-passos)
 
 ## Funcionalidades
@@ -388,6 +389,17 @@ Os imports entre módulos usam aliases em vez de caminhos relativos (`../../`):
 | `@test/*` | `test/*` | `import { SetupTestApp } from '@test/test-setup';` |
 
 Imports dentro da mesma pasta continuam relativos (`./admin.schema`, `./dto/...`). Os aliases estão em `tsconfig.json` (`paths`) e no `moduleNameMapper` do Jest (`package.json` e `test/jest-e2e.json`). O `nest build` converte os aliases em caminhos relativos no `dist/`, então nada muda em produção.
+
+## Deploy (Railway)
+
+A API roda no [Railway](https://railway.com), com deploy automático a cada merge na `main`. O projeto `verdant-nest` tem três serviços: a **API** (este repositório), o **MongoDB** e o **Redis**, que se falam pela rede privada.
+
+- **Build e start:** definidos em [`railway.json`](railway.json) (`npm run build` e depois `npm run start:prod`), com health check em `/`.
+- **Fotos:** volume persistente montado em `/data` (`UPLOADS_DIR=/data/uploads`). O disco do container é apagado a cada deploy.
+- **Variáveis:** `MONGO_URI` e `REDIS_*` apontam para os outros serviços por referência (`${{MongoDB...}}`, `${{Redis...}}`). Os secrets de JWT e o `ADMIN_SECRET_KEY` são gerados aleatoriamente e ficam **só no painel do Railway**. Também estão definidos `NODE_ENV=production`, `TRUST_PROXY=1` e `MONGOMS_DISABLE_POSTINSTALL=1` (evita baixar o binário do Mongo de testes no build).
+- **CORS:** em produção, só as origens de `CORS_ORIGINS` são liberadas para navegadores. Apps nativos não enviam `Origin` e não são afetados.
+
+Para ver logs e variáveis, use `railway logs` e `railway variables` (com a pasta ligada ao projeto por `railway link`) ou o painel do Railway.
 
 ## Próximos passos
 
