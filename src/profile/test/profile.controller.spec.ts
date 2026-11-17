@@ -77,6 +77,33 @@ describe('🙋 ProfileController (e2e)', () => {
 		expect(response.body).toEqual([]);
 	});
 
+	it('GET /profile/search should find people by name', async () => {
+		await userService.create(mockUser);
+		await userService.create(mockUserMaria);
+		const token = await login();
+
+		const res = await request(app.getHttpServer())
+			.get('/profile/search')
+			.query({ q: 'mari' })
+			.set('Authorization', `Bearer ${token}`)
+			.expect(200);
+
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0]).toMatchObject({ fullName: 'Maria Oliveira', online: false, isMatch: false });
+		expect(res.body[0]).not.toHaveProperty('email');
+	});
+
+	it('GET /profile/search should validate the query', async () => {
+		await userService.create(mockUser);
+		const token = await login();
+		const auth = { Authorization: `Bearer ${token}` };
+
+		await request(app.getHttpServer()).get('/profile/search').set(auth).expect(400);
+		await request(app.getHttpServer()).get('/profile/search').query({ q: ' a ' }).set(auth).expect(400);
+		await request(app.getHttpServer()).get('/profile/search').query({ q: 'x'.repeat(51) }).set(auth).expect(400);
+		await request(app.getHttpServer()).get('/profile/search').query({ q: 'mar', online: 'yes' }).set(auth).expect(400);
+	});
+
 	it('GET and PUT /profile/preferences', async () => {
 		await userService.create(mockUser);
 		const token = await login();

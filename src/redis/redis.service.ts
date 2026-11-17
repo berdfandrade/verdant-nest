@@ -22,6 +22,13 @@ export class RedisService implements OnModuleDestroy {
 		return value ? JSON.parse(value) : null;
 	}
 
+	// Várias chaves numa ida ao Redis; null onde a chave não existe
+	async getKeys<T = any>(keys: string[]): Promise<(T | null)[]> {
+		if (!keys.length) return [];
+		const values = await this.redis.mget(...keys);
+		return values.map(value => (value ? JSON.parse(value) : null));
+	}
+
 	async deleteKey(key: string): Promise<number> {
 		return this.redis.del(key);
 	}
