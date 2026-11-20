@@ -10,6 +10,8 @@ import { UserService } from '@/user/user.service';
 import { mockUser, mockUserFree, mockUserMaria } from '@/user/test/mock/user.mock';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { LikesService } from '@/likes/likes.service';
+import { RedisService } from '@/redis/redis.service';
+import { onlineKey } from '@/chat/presence';
 
 let app: INestApplication;
 let mongoServer: MongoMemoryServer;
@@ -17,6 +19,7 @@ let mongoServer: MongoMemoryServer;
 let profileService: ProfileService;
 let userService: UserService;
 let likesService: LikesService;
+let redisService: RedisService;
 
 let userModel: Model<User>;
 
@@ -28,6 +31,7 @@ beforeAll(async () => {
 	profileService = moduleFixture.get(ProfileService);
 	userService = moduleFixture.get(UserService);
 	likesService = moduleFixture.get(LikesService);
+	redisService = moduleFixture.get(RedisService);
 	userModel = moduleFixture.get<Model<User>>(getModelToken(User.name));
 	await userModel.createIndexes(); // força a criação do índice 2dsphere antes dos testes ($geoNear)
 });
@@ -314,4 +318,71 @@ describe('🙋 ProfileService', () => {
 			expect(response.location?.coordinates).toEqual([-43.9378, -19.9208]);
 		});
 	});
+
+	describe('🔎 searchByName', () => {
+		// Bernardo (homem, quer ver mulheres) e Maria (mulher, quer ver homens): passam no filtro de gênero
+		const createPair = async () => {
+			const me = await userService.create(mockUserFree);
+			const maria = await userService.create(mockUserMaria);
+			return { me, maria };
+		};
+
+		it('should find people by the start of the first name or surname, ignoring accents', async () => {
+			const { me, maria } = await createPair();
+
+			for (const term of ['mar', 'MARIA', 'olív', 'maria_ar']) {
+				const results = await profileService.searchByName(me.id, term);
+				expect(results.map(result => String(result._id))).toEqual([maria.id]);
+			}
+			expect(await profileService.searchByName(me.id, 'aria')).toHaveLength(0);
+		});
+
+		it('should return distance and hide private fields', async () => {
+			const { me } = await createPair();
+
+			const [result] = await profileService.searchByName(me.id, 'maria');
+			expect(typeof result.distance).toBe('number');
+			expect(result).not.toHaveProperty('email');
+			expect(result).not.toHaveProperty('password');
+			expect(result).not.toHaveProperty('phoneNumber');
+		});
+
+		it('should never return myself, blocked people or inactive accounts', async () => {
+			const { me, maria } = await createPair();
+			expect(await profileService.searchByName(me.id, 'bernardo')).toHaveLength(0);
+
+			// Ela me bloqueou
+			await userModel.updateOne({ _id: maria._id }, { blockedUsers: [me._id] });
+			expect(await profileService.searchByName(me.id, 'maria')).toHaveLength(0);
+
+			// Conta inativa
+			await userModel.updateOne({ _id: maria._id }, { blockedUsers: [], active: false });
+			expect(await profileService.searchByName(me.id, 'maria')).toHaveLength(0);
+		});
+
+		it('should respect the mutual gender filter', async () => {
+			const { me, maria } = await createPair();
+			await userModel.updateOne({ _id: maria._id }, { showMe: ['women'] });
+			expect(await profileService.searchByName(me.id, 'maria')).toHaveLength(0);
+		});
+
+		it('should flag matches and filter by who is online', async () => {
+			const { me, maria } = await createPair();
+			await userModel.updateOne({ _id: me._id }, { matches: [maria._id] });
+
+			const [offline] = await profileService.searchByName(me.id, 'maria');
+			expect(offline).toMatchObject({ isMatch: true, online: false });
+			expect(await profileService.searchByName(me.id, 'maria', { onlineOnly: true })).toHaveLength(0);
+
+			await redisService.setKey(onlineKey(maria.id), 'socket-1');
+			try {
+				const online = await profileService.searchByName(me.id, 'maria', { onlineOnly: true });
+				expect(online).toHaveLength(1);
+				expect(online[0].online).toBe(true);
+			} finally {
+				await redisService.deleteKey(onlineKey(maria.id));
+			}
+		});
+	});
 });
+

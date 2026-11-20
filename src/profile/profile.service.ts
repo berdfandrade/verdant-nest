@@ -6,6 +6,9 @@ import { UpdatePreferencesDto } from '@/user/dto/update-preferences.dto';
 import { UpdateAboutDto } from '@/user/dto/update-about.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { advancedFilterConditions, genderConditions } from './feed-filters';
+import { fullNameRegex, usernameRegex } from './name-search';
+import { RedisService } from '@/redis/redis.service';
+import { onlineKey } from '@/chat/presence';
 
 /*
     ProfileService:
@@ -15,6 +18,9 @@ import { advancedFilterConditions, genderConditions } from './feed-filters';
 
 export const DEFAULT_DISTANCE_KM = 10;
 export const FEED_LIMIT = 50;
+export const SEARCH_LIMIT = 30;
+// Quantos nomes a busca lê antes do filtro "online" (que só dá para aplicar depois, no Redis)
+const SEARCH_SCAN_LIMIT = 100;
 
 // Campos que nunca devem sair no feed (dados privados ou listas internas)
 const FEED_HIDDEN_FIELDS = [
@@ -52,7 +58,10 @@ export function birthDateRangeFromAges(minAge?: number, maxAge?: number, now = n
 
 @Injectable()
 export class ProfileService {
-	constructor(@InjectModel(User.name) private userModel: UserModel) {}
+	constructor(
+		@InjectModel(User.name) private userModel: UserModel,
+		private readonly redisService: RedisService,
+	) {}
 
 	async showMeProfiles(myProfileId: Types.ObjectId | string) {
 		const myProfile = await this.userModel.findById(myProfileId);
@@ -124,6 +133,57 @@ export class ProfileService {
 		]);
 
 		return nearbyUsers;
+	}
+
+	/*
+		Busca por nome (Figma: 08 · Pesquisar). Diferente do feed, acha também quem eu já curti,
+		passei ou dei match, sem limite de distância. Mantém o que protege as pessoas:
+		ninguém bloqueado (nos dois sentidos), só contas ativas e o filtro de gênero mútuo.
+		Com localização, ordena do mais perto ao mais longe; sem ela, por nome.
+	*/
+	async searchByName(myProfileId: Types.ObjectId | string, term: string, { onlineOnly = false } = {}) {
+		const me = await this.userModel.findById(myProfileId);
+		if (!me) throw new NotFoundException('Profile not found');
+
+		const query: Record<string, any> = {
+			_id: { $nin: [me._id, ...(me.blockedUsers ?? [])] },
+			active: true,
+			blockedUsers: { $ne: me._id },
+			$and: [
+				...genderConditions(me),
+				{ $or: [{ fullName: fullNameRegex(term) }, { username: usernameRegex(term) }] },
+			],
+		};
+		const hide = { $project: Object.fromEntries(FEED_HIDDEN_FIELDS.map(field => [field, 0])) };
+
+		const [longitude, latitude] = me.location?.coordinates ?? [];
+		const hasLocation = typeof longitude === 'number' && typeof latitude === 'number';
+
+		const candidates = hasLocation
+			? await this.userModel.aggregate([
+					{
+						$geoNear: {
+							near: { type: 'Point', coordinates: [longitude, latitude] },
+							distanceField: 'distance',
+							spherical: true,
+							query,
+						},
+					},
+					{ $limit: SEARCH_SCAN_LIMIT },
+					hide,
+				])
+			: await this.userModel.aggregate([{ $match: query }, { $sort: { fullName: 1 } }, { $limit: SEARCH_SCAN_LIMIT }, hide]);
+
+		const presence = await this.redisService.getKeys(candidates.map(candidate => onlineKey(String(candidate._id))));
+		const myMatches = new Set((me.matches ?? []).map(String));
+
+		const results = candidates.map((candidate, index) => ({
+			...candidate,
+			online: presence[index] !== null,
+			isMatch: myMatches.has(String(candidate._id)),
+		}));
+
+		return (onlineOnly ? results.filter(result => result.online) : results).slice(0, SEARCH_LIMIT);
 	}
 
 	async showMeMyPreferences(myProfileId: Types.ObjectId | string) {

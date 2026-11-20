@@ -7,6 +7,7 @@ import { Conversation } from '@/conversation/schemas/conversation.schema';
 import { MessagesService } from '@/messages/messages.service';
 import MongoDbUtils from '@/utils/MongoDB.utils';
 import { RATE_LIMITS, RateLimitConfig } from '@/config/rate-limit.config';
+import { onlineKey } from './presence';
 
 export interface ChatConnection {
 	socketId: string;
@@ -117,7 +118,7 @@ export class ChatService {
 	// ---- Presença (online/offline) ----
 
 	async setOnline(userId: string, socketId: string) {
-		await this.redisService.setKey(`online:${userId}`, socketId);
+		await this.redisService.setKey(onlineKey(userId), socketId);
 		await this.redisService.setKey(`socket:${socketId}`, userId);
 	}
 
@@ -127,15 +128,15 @@ export class ChatService {
 
 		if (userId) {
 			// Só remove o online se ainda for o mesmo socket (o user pode ter reconectado)
-			const currentSocket = await this.redisService.getKey<string>(`online:${userId}`);
-			if (currentSocket === socketId) await this.redisService.deleteKey(`online:${userId}`);
+			const currentSocket = await this.redisService.getKey<string>(onlineKey(userId));
+			if (currentSocket === socketId) await this.redisService.deleteKey(onlineKey(userId));
 		}
 
 		return userId;
 	}
 
 	async isOnline(userId: string): Promise<boolean> {
-		return (await this.redisService.getKey(`online:${userId}`)) !== null;
+		return (await this.redisService.getKey(onlineKey(userId))) !== null;
 	}
 
 	async addConnection({ socketId, userId, conversationId }: ChatConnection) {
