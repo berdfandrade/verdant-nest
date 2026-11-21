@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
@@ -8,6 +8,7 @@ import { User } from '@/auth/decorators/user.decorator';
 import { UpdatePreferencesDto } from '@/user/dto/update-preferences.dto';
 import { UpdateAboutDto } from '@/user/dto/update-about.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { SearchProfilesQueryDto } from './dto/search-profiles.dto';
 import { MAX_PHOTO_SIZE_BYTES, PhotosService } from './photos.service';
 
 @ApiTags('🙋 Profile')
@@ -24,6 +25,12 @@ export class ProfileController {
 	@Get('feed')
 	async feed(@User() user: any) {
 		return this.profileService.showMeProfiles(user._id);
+	}
+
+	// Pesquisar pessoas por nome ou username: ?q=lari&online=true
+	@Get('search')
+	async search(@User() user: any, @Query() query: SearchProfilesQueryDto) {
+		return this.profileService.searchByName(user._id, query.q, { onlineOnly: query.online === 'true' });
 	}
 
 	@Get('preferences')
